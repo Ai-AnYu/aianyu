@@ -63,7 +63,7 @@ const CHINESE_HEX_FIRST_CHARS = Array.from({ length: 0xa0 - 0x4e }, (_, i) => (0
 
 // --- MODIFIED PROVIDER_CONFIG (Removed default_key) ---
 const PROVIDER_CONFIG = {
-    "Grok-3": { provider: "XAI", base_url: "https://api.x.ai/v1", model_param: "grok-3" },
+    "Grok-3": { provider: "XAI", base_url: "https://api-proxy.me/xai/v1", model_param: "grok-3" },
     "Doubao-1.5-pro-256k": { provider: "火山引擎", base_url: "https://ark.cn-beijing.volces.com/api/v3", model_param: "doubao-1-5-pro-256k-250115" },
     "Deepseek-v3.0": { provider: "硅基流动", base_url: "https://api.siliconflow.cn/v1", model_param: "deepseek-ai/DeepSeek-V3" },
     "private": { provider: "private" }
