@@ -57,11 +57,11 @@ const abc_group5_chars = ['"', "'", ";", "$", "%", "&", "+", "=", "(", ")", "<",
 const CHINESE_UNICODE_START = 0x4e00;
 const CHINESE_UNICODE_END = 0x9fff;
 const CHINESE_HEX_FIRST_CHARS = Array.from({ length: 0xa0 - 0x4e }, (_, i) => (0x4e + i).toString(16).padStart(2, '0'));
-// 使用环境变量获取API密钥
+// 从环境变量获取 API 密钥
 const DEFAULT_API_KEYS = {
-    "硅基流动": process.env.API_KEY_SILICON_FLOW || "",
-    "火山引擎": process.env.API_KEY_VOLCANO_ENGINE || "",
-    "XAI": process.env.API_KEY_XAI || ""
+    "硅基流动": process.env.SILICONFLOW_API_KEY || "",
+    "火山引擎": process.env.VOLCENGINE_API_KEY || "",
+    "XAI": process.env.XAI_API_KEY || ""
 };
 const PROVIDER_CONFIG = {
     "Grok-3": { provider: "XAI", base_url: "https://api.x.ai/v1", model_param: "grok-3", default_key: DEFAULT_API_KEYS["XAI"] },
@@ -81,8 +81,7 @@ const url_allowed_single_special = new Set([...url_group2_chars, ...url_group3_c
 const url_allowed_chars_set = new Set([...url_group1_chars, ...url_allowed_single_special]);
 
 
-// --- SUPABASE SETUP ---
-// 使用环境变量获取Supabase配置
+// 从环境变量获取 Supabase 配置
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://gfdxqztbvtuohqwtpduz.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
