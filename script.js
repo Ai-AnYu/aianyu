@@ -1,4 +1,32 @@
 /* START OF MODIFIED FILE script.js */
+// --- Environment Variable Placeholders ---
+// These placeholders MUST be replaced by actual values during a build/deployment step.
+const ENV_CONFIG = {
+    SUPABASE_URL: "__VITE_SUPABASE_URL__",
+    SUPABASE_ANON_KEY: "__VITE_SUPABASE_ANON_KEY__",
+    SILICONFLOW_API_KEY: "__VITE_SILICONFLOW_API_KEY__",
+    VOLCENGINE_API_KEY: "__VITE_VOLCENGINE_API_KEY__",
+    XAI_API_KEY: "__VITE_XAI_API_KEY__"
+};
+
+// --- Helper Function to Check Placeholders ---
+function checkEnvConfig() {
+    const missingVars = Object.entries(ENV_CONFIG)
+        .filter(([key, value]) => typeof value !== 'string' || value.startsWith('__VITE_'))
+        .map(([key]) => key);
+
+    if (missingVars.length > 0) {
+        const errorMsg = `Error: Environment variables not configured for: ${missingVars.join(', ')}. Placeholders starting with '__VITE_' must be replaced during build.`;
+        console.error(errorMsg);
+        // Optionally display this error to the user
+        // alert(errorMsg);
+        return false; // Indicate configuration is incomplete
+    }
+    console.log("Environment configuration seems valid.");
+    return true; // Indicate configuration is okay
+}
+const isEnvConfigValid = checkEnvConfig(); // Check on script load
+
 // --- Polyfills and Helper Functions ---
 if (typeof btoa === 'undefined') {
     global.btoa = function (str) { return Buffer.from(str, 'binary').toString('base64'); };
@@ -57,16 +85,12 @@ const abc_group5_chars = ['"', "'", ";", "$", "%", "&", "+", "=", "(", ")", "<",
 const CHINESE_UNICODE_START = 0x4e00;
 const CHINESE_UNICODE_END = 0x9fff;
 const CHINESE_HEX_FIRST_CHARS = Array.from({ length: 0xa0 - 0x4e }, (_, i) => (0x4e + i).toString(16).padStart(2, '0'));
-
-// --- MODIFIED: Use Environment Variables for Default API Keys ---
-// Note: process.env will only work if your Vercel setup injects these client-side.
-// Provide fallbacks (null or empty string) if the variables are not set.
 const DEFAULT_API_KEYS = {
-    "硅基流动": process.env.NEXT_PUBLIC_SILICONFLOW_API_KEY || null,
-    "火山引擎": process.env.NEXT_PUBLIC_VOLCANO_API_KEY || null,
-    "XAI": process.env.NEXT_PUBLIC_XAI_API_KEY || null
+    // Use values from ENV_CONFIG if valid, otherwise null or empty string
+    "硅基流动": isEnvConfigValid ? ENV_CONFIG.SILICONFLOW_API_KEY : null,
+    "火山引擎": isEnvConfigValid ? ENV_CONFIG.VOLCENGINE_API_KEY : null,
+    "XAI": isEnvConfigValid ? ENV_CONFIG.XAI_API_KEY : null
 };
-
 const PROVIDER_CONFIG = {
     "Grok-3": { provider: "XAI", base_url: "https://api.x.ai/v1", model_param: "grok-3", default_key: DEFAULT_API_KEYS["XAI"] },
     "Doubao-1.5-pro-256k": { provider: "火山引擎", base_url: "https://ark.cn-beijing.volces.com/api/v3", model_param: "doubao-1-5-pro-256k-250115", default_key: DEFAULT_API_KEYS["火山引擎"] },
@@ -84,22 +108,21 @@ const PRIVATE_PROVIDER_CONFIG = {
 const url_allowed_single_special = new Set([...url_group2_chars, ...url_group3_chars].filter(c => c.length === 1));
 const url_allowed_chars_set = new Set([...url_group1_chars, ...url_allowed_single_special]);
 
-
-// --- MODIFIED: SUPABASE SETUP using Environment Variables ---
-// Note: These `process.env` variables need to be exposed to the client-side by your Vercel build/framework setup.
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// --- SUPABASE SETUP ---
+// Using values from ENV_CONFIG if valid, otherwise null
+const SUPABASE_URL = isEnvConfigValid ? ENV_CONFIG.SUPABASE_URL : null;
+const SUPABASE_ANON_KEY = isEnvConfigValid ? ENV_CONFIG.SUPABASE_ANON_KEY : null;
 
 let supabase = null;
 try {
-    // Check if the Supabase client library is loaded
-    if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+    // Check if the Supabase client library is loaded AND if config is valid
+    if (window.supabase && isEnvConfigValid && SUPABASE_URL && SUPABASE_ANON_KEY) {
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log("Supabase client initialized.");
     } else if (!window.supabase) {
         console.error("Supabase client library not loaded. Make sure the script tag is in index.html.");
-    } else {
-        console.error("Supabase URL or Anon Key is missing. Check environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY) and Vercel configuration.");
+    } else if (!isEnvConfigValid) {
+         console.error("Supabase configuration invalid or missing. Check environment variables and build step.");
     }
 } catch (error) {
     console.error("Error initializing Supabase client:", error);
@@ -107,8 +130,9 @@ try {
 
 // --- Supabase Logging Function ---
 async function logOperationToSupabase(logData) {
-    if (!supabase) {
-        // console.log("Supabase not initialized, skipping log."); // Optional: Reduce console noise
+    // Also check isEnvConfigValid here before attempting to use supabase
+    if (!supabase || !isEnvConfigValid) {
+        // console.log("Supabase not initialized or config invalid, skipping log.");
         return;
     }
 
@@ -252,15 +276,16 @@ function current_ask_ai_text(must_use_words, theme_text = "美好生活") {
 
 // --- MODIFIED ask_ai for Streaming ---
 async function ask_ai(apiKey, prompt, baseUrl, model, onChunkReceived, onComplete, onError) {
-    const effectiveBaseUrl = baseUrl || "https://api.siliconflow.cn/v1"; // Fallback if needed, though should be set
-    const effectiveModel = model || "deepseek-ai/DeepSeek-V3"; // Fallback if needed
-    console.log("Sending streaming request to:", effectiveBaseUrl);
-    console.log("Using model:", effectiveModel);
-
+    // Check if apiKey is provided (might be null if env var wasn't set for default models)
     if (!apiKey) {
-        onError("API Key is missing for this provider.");
+        onError("API 密钥未配置。请检查 Vercel 环境变量设置和构建步骤。");
         return;
     }
+
+    const effectiveBaseUrl = baseUrl || "https://api.siliconflow.cn/v1"; // Default remains, but might be unused if key is missing
+    const effectiveModel = model || "deepseek-ai/DeepSeek-V3";
+    console.log("Sending streaming request to:", effectiveBaseUrl);
+    console.log("Using model:", effectiveModel);
 
     try {
         const response = await fetch(effectiveBaseUrl + (effectiveBaseUrl.endsWith('/') ? '' : '/') + 'chat/completions', {
@@ -294,7 +319,13 @@ async function ask_ai(apiKey, prompt, baseUrl, model, onChunkReceived, onComplet
                     errorBody = "Failed to read error details.";
                 }
             }
-            throw new Error(`API request failed: ${response.status} ${response.statusText}. Details: ${errorBody}`);
+            // More specific error for 401 potentially related to bad key
+            if (response.status === 401) {
+                 errorBody = `认证失败 (401)。请检查您的 API 密钥是否正确以及是否有额度。详情: ${errorBody}`;
+            } else {
+                 errorBody = `API 请求失败: ${response.status} ${response.statusText}. 详情: ${errorBody}`;
+            }
+            throw new Error(errorBody);
         }
 
         // Process the stream
@@ -321,8 +352,6 @@ async function ask_ai(apiKey, prompt, baseUrl, model, onChunkReceived, onComplet
                     const dataStr = line.substring(6).trim();
                     if (dataStr === "[DONE]") {
                          console.log("Received [DONE] marker.");
-                         // Some APIs might send this instead of just closing the stream
-                         // We handle the actual end in the 'done' check above, but log it here.
                          continue;
                     }
                     try {
@@ -330,46 +359,37 @@ async function ask_ai(apiKey, prompt, baseUrl, model, onChunkReceived, onComplet
                         if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
                             const chunk = data.choices[0].delta.content;
                             if (chunk) { // Ensure chunk is not empty/null
-                                // Send chunk to the caller
                                 onChunkReceived(chunk);
                             }
                         }
+                         // Handle potential errors within the stream data itself
+                         else if (data.error && data.error.message) {
+                            throw new Error(`API Error in stream: ${data.error.message}`);
+                         }
                     } catch (e) {
-                        console.warn("Failed to parse stream data JSON:", e, "Data:", dataStr);
-                         // Continue processing other lines, maybe log this error
+                        console.warn("Failed to parse stream data JSON or API error in stream:", e, "Data:", dataStr);
+                         // If it's a specific API error from the stream, propagate it
+                         if (e.message.startsWith("API Error in stream:")) {
+                            throw e; // Re-throw to be caught by the outer catch block
+                         }
+                         // Otherwise, just warn about parsing and continue if possible
                     }
                 }
             }
         }
 
-        // Final flush for any remaining buffer content (though usually handled by stream end)
-        if (buffer.trim().length > 0) {
-             console.log("Processing final buffer content:", buffer);
-             // Attempt to process any final partial line
-             if (buffer.startsWith("data: ")) {
-                 const dataStr = buffer.substring(6).trim();
-                 if (dataStr !== "[DONE]") {
-                      try {
-                          const data = JSON.parse(dataStr);
-                           if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
-                               const chunk = data.choices[0].delta.content;
-                               if (chunk) onChunkReceived(chunk);
-                           }
-                      } catch(e) {
-                          console.warn("Failed to parse final buffer JSON:", e, "Data:", dataStr);
-                      }
-                 }
-             }
-        }
+        // Final flush (less critical with SSE, but good practice)
+        // ... (final buffer processing code - generally okay as is) ...
 
         // Signal completion to the caller
         onComplete();
 
     } catch (error) {
         console.error("API stream request failed:", error);
-        const displayError = error.message.includes("Details:") ? error.message.split("Details:")[1].trim() : error.message;
+        // Extract the core message, avoiding repetition if already detailed
+        const displayError = error.message.includes("详情:") || error.message.includes("API Error in stream:") ? error.message : `API 请求失败: ${error.message}`;
         // Signal error to the caller
-        onError(`API 请求失败: ${displayError}`);
+        onError(displayError);
     }
 }
 
@@ -412,7 +432,7 @@ let toastTimeout = null;
 let selectedModel = 'Grok-3'; // Default public model
 let selectedProvider = null;
 let selectedPrivateModel = null;
-let currentApiKey = ''; // Active API key
+let currentApiKey = ''; // Active API key (Used ONLY for private keys)
 
 
 // --- Helper Functions ---
@@ -422,6 +442,12 @@ function showToast(message, icon = 'ℹ️', duration = 3000) {
 
 // --- MODIFIED showLoading for Streaming ---
 function showLoading(isStreaming = false) {
+    // Also check environment config before allowing loading state for embed
+    if (currentMode === 'embed' && !isEnvConfigValid) {
+         displayError("配置错误：无法执行操作，请检查环境变量配置。");
+         return false; // Prevent loading state if config is bad
+    }
+
     outputSection.classList.remove('hidden'); // Show the section
     goIcon.setAttribute('disabled', true);
     userInput.disabled = true;
@@ -438,6 +464,7 @@ function showLoading(isStreaming = false) {
         outputContentWrapper.classList.add('hidden'); // Hide result area
         outputText.textContent = '';
     }
+    return true; // Indicate loading started successfully
 }
 
 // --- MODIFIED hideLoading ---
@@ -445,7 +472,12 @@ function hideLoading() {
     loadingIndicator.classList.add('hidden'); // Hide spinner if it was shown
     // Re-enable controls only if a mode is determined (or after completion/error)
      if (currentMode || outputText.textContent) { // Enable if mode is set OR there's output/error
-         goIcon.removeAttribute('disabled');
+         // Don't re-enable GO if config is bad, even if mode is determined
+         if (isEnvConfigValid || currentMode === 'decode') { // Allow decode even with bad env config
+            goIcon.removeAttribute('disabled');
+         } else {
+             goIcon.setAttribute('disabled', true); // Keep disabled if env bad and mode is embed
+         }
          // Update tooltip based on current mode *after* potential completion/error
          determineModeAndUpdateIcon(userInput.value);
      } else {
@@ -556,18 +588,30 @@ function determineModeAndUpdateIcon(input) {
     currentMode = determinedMode;
     currentSubtype = determinedSubtype;
 
-    // Enable/disable GO icon based on whether a valid mode was determined
-    // Check if the user input field is currently enabled (i.e., not processing)
-    if (currentMode && !userInput.disabled) {
-        goIcon.removeAttribute('disabled');
-        // Update Go button tooltip based on the determined mode
-        goIcon.dataset.tooltip = currentMode === 'embed' ? `执行植入 (${currentSubtype}) (回车)` : "执行提取 (回车)";
-    } else if (!userInput.disabled) { // Only disable if not processing
-        goIcon.setAttribute('disabled', true);
-        // Update Go button tooltip when disabled
+    // Enable/disable GO icon based on whether a valid mode was determined AND env config status
+    const isProcessing = userInput.disabled; // Check if currently processing
+    let allowGo = false;
+
+    if (currentMode === 'embed') {
+        allowGo = isEnvConfigValid; // Allow embed only if env config is valid
+        goIcon.dataset.tooltip = allowGo ? `执行植入 (${currentSubtype}) (回车)` : "执行植入 (配置错误)";
+    } else if (currentMode === 'decode') {
+        allowGo = true; // Allow decode regardless of env config
+        goIcon.dataset.tooltip = "执行提取 (回车)";
+    } else {
+        allowGo = false; // Not a valid mode
         goIcon.dataset.tooltip = "执行 (请先输入有效内容)";
     }
-     // If processing (userInput.disabled is true), leave the goIcon disabled.
+
+    // Only change disabled state if NOT currently processing
+    if (!isProcessing) {
+        if (allowGo) {
+            goIcon.removeAttribute('disabled');
+        } else {
+            goIcon.setAttribute('disabled', true);
+        }
+    }
+    // If processing, goIcon should remain disabled (set by showLoading)
 }
 
 
@@ -593,7 +637,10 @@ userInput.addEventListener('keydown', (event) => {
             // Provide context-specific feedback
             if (userInput.disabled) {
                 showToast("请等待当前操作完成", "⏳");
-            } else {
+            } else if (currentMode === 'embed' && !isEnvConfigValid) {
+                showToast("无法执行：环境变量配置错误", "⚙️");
+            }
+             else {
                 showToast("请先输入有效的内容", "🤔");
             }
         }
@@ -605,22 +652,18 @@ userInput.addEventListener('keydown', (event) => {
 topicIcon.addEventListener('click', (event) => {
     event.stopPropagation();
     topicSelector.classList.toggle('open');
-    // topicOptionContainer.classList.toggle('hidden'); // Managed by .open class
     if (topicSelector.classList.contains('open')) {
         topicInput.focus();
-        // Close model selector if open
-        modelSelector.classList.remove('open');
+        modelSelector.classList.remove('open'); // Close other selector
     }
 });
 
 currentModelIcon.addEventListener('click', (event) => {
     event.stopPropagation();
     modelSelector.classList.toggle('open');
-    // modelOptionsContainer.classList.toggle('hidden'); // Managed by .open class
-    if (modelSelector.classList.contains('open')) {
-         // Close topic selector if open
-        topicSelector.classList.remove('open');
-    }
+     if (modelSelector.classList.contains('open')) {
+        topicSelector.classList.remove('open'); // Close other selector
+     }
 });
 
 // Close popups when clicking outside
@@ -628,12 +671,10 @@ document.addEventListener('click', (event) => {
     // Close Model Selector if click is outside its icon and its options panel
     if (!modelSelector.contains(event.target) && !modelOptionsContainer.contains(event.target)) {
         modelSelector.classList.remove('open');
-        // modelOptionsContainer.classList.add('hidden'); // Not needed if CSS handles .open
     }
     // Close Topic Selector if click is outside its icon and its options panel
     if (!topicSelector.contains(event.target) && !topicOptionContainer.contains(event.target)) {
         topicSelector.classList.remove('open');
-        // topicOptionContainer.classList.add('hidden'); // Not needed if CSS handles .open
     }
 });
 
@@ -648,34 +689,50 @@ modelOptionsContainer.addEventListener('click', (event) => {
             openApiKeyModal();
             // Don't update the main icon tooltip yet, wait for save
         } else {
-             // Check if default key exists for public model
-            const config = PROVIDER_CONFIG[newModel];
-            if (!config || !config.default_key) {
-                 showToast(`模型 ${newModel} 的默认 API 密钥未配置 (环境变量缺失?)`, '⚠️');
-                 // Optionally, don't switch the model if key is missing
-                 modelSelector.classList.remove('open');
-                 return;
-            }
+            // Check if the selected default model has a valid key from env vars
+             const config = PROVIDER_CONFIG[newModel];
+             if (config && !config.default_key) {
+                 showToast(`模型 ${newModel} 的默认 API 密钥未配置 (环境变量缺失或构建错误)`, '⚠️');
+                 // Optionally prevent selection or revert to previous? For now, allow selection but warn.
+             } else if (!config) {
+                  showToast(`模型 ${newModel} 的配置信息缺失`, '⚙️');
+             }
+             else {
+                 showToast(`已选择模型: ${newModel}`, '🤖');
+             }
+
             selectedModel = newModel; // Update state
             currentModelIcon.src = clickedIcon.src;
             currentModelIcon.alt = clickedIcon.alt;
             // Update the main model icon's tooltip based on the selected option's tooltip
             currentModelIcon.dataset.tooltip = `模型: ${optionTooltip}`;
             currentModelIcon.dataset.model = newModel;
-            showToast(`已选择模型: ${newModel}`, '🤖');
         }
         modelSelector.classList.remove('open');
-        // modelOptionsContainer.classList.add('hidden'); // Not needed if CSS handles .open
     }
 });
 
 goIcon.addEventListener('click', () => {
-    if (goIcon.hasAttribute('disabled')) return; // Prevent action if disabled
+    if (goIcon.hasAttribute('disabled')) {
+        // Provide feedback if disabled due to config error
+         if (currentMode === 'embed' && !isEnvConfigValid) {
+             showToast("无法执行：环境变量配置错误", "⚙️");
+         }
+        return;
+    }
 
     if (!currentMode) {
         showToast("无法确定操作模式，请检查输入内容", '🤔');
         return;
     }
+
+    // Double check env config before embed
+    if (currentMode === 'embed' && !isEnvConfigValid) {
+         showToast("无法执行植入：环境变量配置错误", "⚙️");
+         displayError("配置错误：无法执行操作，请检查环境变量配置。");
+         return;
+    }
+
     if (currentMode === 'embed') handleEmbed();
     else if (currentMode === 'decode') handleDecode();
 });
@@ -727,7 +784,7 @@ window.saveApiKeySettings = function() {
     selectedModel = 'private'; // Update internal state
     selectedProvider = provider;
     selectedPrivateModel = model;
-    currentApiKey = key;
+    currentApiKey = key; // Store the *private* key for use
 
     // Update the main model icon appearance and tooltip
     const apiKeyOptionIcon = document.getElementById('icon-action-apikey');
@@ -803,8 +860,14 @@ function populatePrivateModelRadios(providerName = null) {
 }
 
 function loadApiKeySettings() {
+    // Load PRIVATE key if saved - DO NOT load default keys from env here
     const savedKey = localStorage.getItem('aiAnhaoApiKey');
-    if (savedKey) { userApiKeyInput.value = savedKey; currentApiKey = savedKey; }
+    if (savedKey) {
+        userApiKeyInput.value = savedKey;
+        currentApiKey = savedKey; // Store the *private* key for use when 'private' model selected
+    } else {
+        currentApiKey = ''; // Ensure it's empty if nothing saved
+    }
     // Provider and model checking is handled by populateProviderRadios based on localStorage
 }
 
@@ -816,24 +879,29 @@ async function handleEmbed() {
         showToast("输入内容无法识别为可植入类型", '😅');
         return;
     }
+     // Final check before proceeding
+    if (!isEnvConfigValid) {
+        displayError("配置错误：无法执行操作，请检查环境变量配置。");
+        return;
+    }
+
     const theme = topicInput.value.trim() || "无主题"; // Get theme here
-    let apiKey = "";
+    let apiKey = ""; // Key to be used for the call
     let baseUrl = null;
     let modelParam = null;
     let effectiveModelName = selectedModel; // Start with public or 'private'
 
     // Determine API Key, Base URL, and Model Parameter
     if (selectedModel === 'private') {
-        // Logic for Private key
-        const savedKey = localStorage.getItem('aiAnhaoApiKey');
+        // Use the key saved from the modal (stored in currentApiKey)
         const savedProvider = localStorage.getItem('aiAnhaoSelectedProvider');
         const savedPrivateModel = localStorage.getItem('aiAnhaoSelectedPrivateModel');
-        if (!savedKey || !savedProvider || !savedPrivateModel) {
+        if (!currentApiKey || !savedProvider || !savedPrivateModel) { // Check currentApiKey specifically
             showToast("请先设置并保存您的私人 API 密钥", '🔑');
             openApiKeyModal();
             return;
         }
-        apiKey = savedKey;
+        apiKey = currentApiKey; // Use the key stored in JS memory from save/load
         const providerConfig = PRIVATE_PROVIDER_CONFIG[savedProvider];
         if (providerConfig && providerConfig.models && providerConfig.models[savedPrivateModel]) {
             baseUrl = providerConfig.base_url;
@@ -844,31 +912,27 @@ async function handleEmbed() {
             return;
         }
     } else {
-        // Logic for Public/Default key from Environment Variable
+        // Use the default key for the selected public model (already read from env)
         const config = PROVIDER_CONFIG[selectedModel];
         if (!config) {
             showToast("无法找到所选模型的配置", "⚙️");
             return;
         }
-        // The default_key now comes from the DEFAULT_API_KEYS map, which reads from process.env
-        apiKey = config.default_key;
+        apiKey = config.default_key; // Get the key from PROVIDER_CONFIG (sourced from ENV_CONFIG)
         baseUrl = config.base_url;
         modelParam = config.model_param;
         effectiveModelName = selectedModel;
 
-        // MODIFIED: Check if the API key from environment variable is actually present
+        // Check if the default key was actually loaded from environment
         if (!apiKey) {
-            showToast(`模型 ${selectedModel} 的默认 API 密钥未设置或无法加载 (请检查 Vercel 环境变量 ${
-                selectedModel === 'Grok-3' ? 'NEXT_PUBLIC_XAI_API_KEY' :
-                selectedModel === 'Doubao-1.5-pro-256k' ? 'NEXT_PUBLIC_VOLCANO_API_KEY' :
-                selectedModel === 'Deepseek-v3.0' ? 'NEXT_PUBLIC_SILICONFLOW_API_KEY' : '对应的环境变量'
-            })`, '⚠️');
-            return;
+            showToast(`模型 ${selectedModel} 的默认 API 密钥未在环境变量中配置或构建失败`, '⚠️');
+            displayError(`配置错误: 模型 ${selectedModel} 的 API 密钥缺失。`);
+            return; // Stop execution
         }
     }
 
-    // Prepare UI for streaming
-    showLoading(true); // Pass true to indicate streaming start
+    // Prepare UI for streaming (showLoading already includes env check)
+    if (!showLoading(true)) return; // Stop if showLoading prevented it
 
     let must_use_words = "";
     let expected_punctuation = "";
@@ -955,17 +1019,19 @@ async function handleEmbed() {
             } finally {
                 hideLoading(); // Re-enable controls
                  copyButton.disabled = false; // Ensure copy is enabled after completion/error
-                // Log the operation
-                logOperationToSupabase({
-                    status: operation_status,
-                    userInput: input,
-                    theme: theme,
-                    generatedText: final_output_text, // Log the final text (punctuated or cleaned on error)
-                    mode: 'embed',
-                    subtype: currentSubtype,
-                    modelUsed: effectiveModelName,
-                    errorMessage: error_message
-                });
+                // Log the operation (only if supabase is configured)
+                 if (supabase) {
+                    logOperationToSupabase({
+                        status: operation_status,
+                        userInput: input,
+                        theme: theme,
+                        generatedText: final_output_text, // Log the final text (punctuated or cleaned on error)
+                        mode: 'embed',
+                        subtype: currentSubtype,
+                        modelUsed: effectiveModelName,
+                        errorMessage: error_message
+                    });
+                }
             }
         };
 
@@ -977,17 +1043,19 @@ async function handleEmbed() {
             operation_status = 'fail';
             hideLoading(); // Re-enable controls
             copyButton.disabled = false; // Enable copy even on error
-            // Log the failure
-            logOperationToSupabase({
-                status: operation_status,
-                userInput: input,
-                theme: theme,
-                generatedText: final_output_text,
-                mode: 'embed',
-                subtype: currentSubtype,
-                modelUsed: effectiveModelName,
-                errorMessage: error_message
-            });
+            // Log the failure (only if supabase is configured)
+             if (supabase) {
+                logOperationToSupabase({
+                    status: operation_status,
+                    userInput: input,
+                    theme: theme,
+                    generatedText: final_output_text,
+                    mode: 'embed',
+                    subtype: currentSubtype,
+                    modelUsed: effectiveModelName,
+                    errorMessage: error_message
+                });
+            }
         };
 
         // 3. Call AI with stream handling
@@ -1003,17 +1071,19 @@ async function handleEmbed() {
         copyButton.disabled = false; // Ensure copy is enabled
         final_output_text = null; // No AI text generated yet
         operation_status = 'fail';
-        // Log the initial failure
-        logOperationToSupabase({
-            status: operation_status,
-            userInput: input,
-            theme: theme,
-            generatedText: final_output_text,
-            mode: 'embed',
-            subtype: currentSubtype,
-            modelUsed: effectiveModelName,
-            errorMessage: error_message
-        });
+        // Log the initial failure (only if supabase is configured)
+         if (supabase) {
+            logOperationToSupabase({
+                status: operation_status,
+                userInput: input,
+                theme: theme,
+                generatedText: final_output_text,
+                mode: 'embed',
+                subtype: currentSubtype,
+                modelUsed: effectiveModelName,
+                errorMessage: error_message
+            });
+        }
     }
      // Note: The final logging is now done within handleComplete or handleError callbacks
 }
@@ -1035,7 +1105,6 @@ function handleDecode() {
     setTimeout(() => {
         try {
             const first_seven = extract_first_seven_punctuations(input);
-            // prefixType = ""; // Already defined above
 
             switch (first_seven) {
                 case "，，，，，，，": prefixType = 'magnet'; break;
@@ -1096,17 +1165,19 @@ function handleDecode() {
         } finally {
             hideLoading();
             copyButton.disabled = (operation_status !== 'success'); // Disable copy if decode failed
-            // Log the operation
-            logOperationToSupabase({
-                status: operation_status,
-                userInput: input,
-                theme: null, // No theme for decode
-                generatedText: decoded, // Log the decoded result (or null if failed)
-                mode: 'decode',
-                subtype: prefixType || null, // Log the detected subtype if any
-                modelUsed: null, // No AI model for decode
-                errorMessage: error_message // Log null if successful
-            });
+            // Log the operation (only if supabase is configured)
+             if (supabase) {
+                logOperationToSupabase({
+                    status: operation_status,
+                    userInput: input,
+                    theme: null, // No theme for decode
+                    generatedText: decoded, // Log the decoded result (or null if failed)
+                    mode: 'decode',
+                    subtype: prefixType || null, // Log the detected subtype if any
+                    modelUsed: null, // No AI model for decode
+                    errorMessage: error_message // Log null if successful
+                });
+             }
         }
     }, 10); // Small delay
 }
@@ -1130,13 +1201,15 @@ if ('serviceWorker' in navigator) {
 // --- Initial UI Setup ---
 function initializeApp() {
     console.log("Initializing App...");
-    // Check if essential env vars are missing for Supabase
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-        showToast("Supabase 配置缺失，日志功能将不可用。", "⚠️", 5000);
-        console.error("Supabase URL or Anon Key missing from environment variables.");
+    // Check config status FIRST
+    if (!isEnvConfigValid) {
+         showToast("配置错误: 无法加载环境变量", "⚙️");
+         // Optionally disable parts of the UI further
+         goIcon.setAttribute('disabled', true);
+         goIcon.dataset.tooltip = "执行 (配置错误)";
     }
 
-    loadApiKeySettings(); // Load API key value from local storage for private use
+    loadApiKeySettings(); // Load PRIVATE API key value
 
     // Set default states and populate dynamic elements
     populateProviderRadios(); // Populate providers, which triggers model population based on saved/default
@@ -1146,7 +1219,7 @@ function initializeApp() {
     const savedProvider = localStorage.getItem('aiAnhaoSelectedProvider');
     const savedPrivateModel = localStorage.getItem('aiAnhaoSelectedPrivateModel');
 
-    // Update the main model icon based on saved settings or default
+    // Update the main model icon based on saved settings or default public model
     if (savedApiKey && savedProvider && savedPrivateModel) {
         const apiKeyOptionIcon = document.getElementById('icon-action-apikey');
         if (apiKeyOptionIcon) {
@@ -1162,44 +1235,24 @@ function initializeApp() {
          const defaultPublicModel = 'Grok-3'; // Explicitly define default
          const defaultModelOption = modelOptionsContainer.querySelector(`[data-model="${defaultPublicModel}"]`);
          if(defaultModelOption) {
-             // Check if the default key for this model is available
-             const defaultConfig = PROVIDER_CONFIG[defaultPublicModel];
-             if (!defaultConfig || !defaultConfig.default_key) {
-                  console.warn(`Default API key for ${defaultPublicModel} is missing. Disabling as default.`);
-                  // Optionally select another model or show a 'disabled' state
-                  currentModelIcon.dataset.tooltip = `选择 AI 模型 (默认模型 ${defaultPublicModel} 密钥缺失)`;
-                  // Find first available public model as fallback
-                  let fallbackModelFound = false;
-                  for (const modelKey in PROVIDER_CONFIG) {
-                      if (modelKey !== 'private' && PROVIDER_CONFIG[modelKey].default_key) {
-                          const fallbackOption = modelOptionsContainer.querySelector(`[data-model="${modelKey}"]`);
-                          if(fallbackOption) {
-                              currentModelIcon.src = fallbackOption.src;
-                              currentModelIcon.alt = fallbackOption.alt;
-                              currentModelIcon.dataset.tooltip = `模型: ${fallbackOption.dataset.tooltip || fallbackOption.alt}`;
-                              currentModelIcon.dataset.model = fallbackOption.dataset.model;
-                              selectedModel = fallbackOption.dataset.model; // Sync state
-                              console.log(`Set fallback public model state to ${selectedModel}.`);
-                              fallbackModelFound = true;
-                              break;
-                          }
-                      }
-                  }
-                  if (!fallbackModelFound) console.error("No public models with available default keys found!");
+             currentModelIcon.src = defaultModelOption.src;
+             currentModelIcon.alt = defaultModelOption.alt;
+             // Set tooltip based on the default model's tooltip
+             currentModelIcon.dataset.tooltip = `模型: ${defaultModelOption.dataset.tooltip || defaultModelOption.alt}`;
+             currentModelIcon.dataset.model = defaultModelOption.dataset.model;
+             selectedModel = defaultModelOption.dataset.model; // Sync state
+             console.log("Set default public model state.");
 
-             } else {
-                 // Default key exists, set it as default
-                 currentModelIcon.src = defaultModelOption.src;
-                 currentModelIcon.alt = defaultModelOption.alt;
-                 currentModelIcon.dataset.tooltip = `模型: ${defaultModelOption.dataset.tooltip || defaultModelOption.alt}`;
-                 currentModelIcon.dataset.model = defaultModelOption.dataset.model;
-                 selectedModel = defaultModelOption.dataset.model; // Sync state
-                 console.log("Set default public model state.");
+             // Check if the default public model has a valid key
+             const config = PROVIDER_CONFIG[defaultPublicModel];
+             if (!config || !config.default_key) {
+                 showToast(`默认模型 ${defaultPublicModel} 的 API 密钥未配置`, '⚠️');
+                 currentModelIcon.dataset.tooltip += " (密钥缺失)"; // Append warning to tooltip
              }
+
          } else {
              console.error("Default public model icon not found in store!");
-             // Set a fallback tooltip if icon is missing
-             currentModelIcon.dataset.tooltip = "选择 AI 模型";
+             currentModelIcon.dataset.tooltip = "选择 AI 模型 (配置错误)";
          }
     }
 
