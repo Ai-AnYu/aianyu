@@ -1,32 +1,4 @@
 /* START OF MODIFIED FILE script.js */
-// --- Environment Variable Placeholders ---
-// These placeholders MUST be replaced by actual values during a build/deployment step.
-const ENV_CONFIG = {
-    SUPABASE_URL: "__VITE_SUPABASE_URL__",
-    SUPABASE_ANON_KEY: "__VITE_SUPABASE_ANON_KEY__",
-    SILICONFLOW_API_KEY: "__VITE_SILICONFLOW_API_KEY__",
-    VOLCENGINE_API_KEY: "__VITE_VOLCENGINE_API_KEY__",
-    XAI_API_KEY: "__VITE_XAI_API_KEY__"
-};
-
-// --- Helper Function to Check Placeholders ---
-function checkEnvConfig() {
-    const missingVars = Object.entries(ENV_CONFIG)
-        .filter(([key, value]) => typeof value !== 'string' || value.startsWith('__VITE_'))
-        .map(([key]) => key);
-
-    if (missingVars.length > 0) {
-        const errorMsg = `Error: Environment variables not configured for: ${missingVars.join(', ')}. Placeholders starting with '__VITE_' must be replaced during build.`;
-        console.error(errorMsg);
-        // Optionally display this error to the user
-        // alert(errorMsg);
-        return false; // Indicate configuration is incomplete
-    }
-    console.log("Environment configuration seems valid.");
-    return true; // Indicate configuration is okay
-}
-const isEnvConfigValid = checkEnvConfig(); // Check on script load
-
 // --- Polyfills and Helper Functions ---
 if (typeof btoa === 'undefined') {
     global.btoa = function (str) { return Buffer.from(str, 'binary').toString('base64'); };
@@ -85,11 +57,11 @@ const abc_group5_chars = ['"', "'", ";", "$", "%", "&", "+", "=", "(", ")", "<",
 const CHINESE_UNICODE_START = 0x4e00;
 const CHINESE_UNICODE_END = 0x9fff;
 const CHINESE_HEX_FIRST_CHARS = Array.from({ length: 0xa0 - 0x4e }, (_, i) => (0x4e + i).toString(16).padStart(2, '0'));
+// 使用环境变量获取API密钥
 const DEFAULT_API_KEYS = {
-    // Use values from ENV_CONFIG if valid, otherwise null or empty string
-    "硅基流动": isEnvConfigValid ? ENV_CONFIG.SILICONFLOW_API_KEY : null,
-    "火山引擎": isEnvConfigValid ? ENV_CONFIG.VOLCENGINE_API_KEY : null,
-    "XAI": isEnvConfigValid ? ENV_CONFIG.XAI_API_KEY : null
+    "硅基流动": process.env.API_KEY_SILICON_FLOW || "",
+    "火山引擎": process.env.API_KEY_VOLCANO_ENGINE || "",
+    "XAI": process.env.API_KEY_XAI || ""
 };
 const PROVIDER_CONFIG = {
     "Grok-3": { provider: "XAI", base_url: "https://api.x.ai/v1", model_param: "grok-3", default_key: DEFAULT_API_KEYS["XAI"] },
@@ -108,21 +80,20 @@ const PRIVATE_PROVIDER_CONFIG = {
 const url_allowed_single_special = new Set([...url_group2_chars, ...url_group3_chars].filter(c => c.length === 1));
 const url_allowed_chars_set = new Set([...url_group1_chars, ...url_allowed_single_special]);
 
+
 // --- SUPABASE SETUP ---
-// Using values from ENV_CONFIG if valid, otherwise null
-const SUPABASE_URL = isEnvConfigValid ? ENV_CONFIG.SUPABASE_URL : null;
-const SUPABASE_ANON_KEY = isEnvConfigValid ? ENV_CONFIG.SUPABASE_ANON_KEY : null;
+// 使用环境变量获取Supabase配置
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://gfdxqztbvtuohqwtpduz.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
 let supabase = null;
 try {
-    // Check if the Supabase client library is loaded AND if config is valid
-    if (window.supabase && isEnvConfigValid && SUPABASE_URL && SUPABASE_ANON_KEY) {
+    // Check if the Supabase client library is loaded (it should be from index.html)
+    if (window.supabase) {
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log("Supabase client initialized.");
-    } else if (!window.supabase) {
+    } else {
         console.error("Supabase client library not loaded. Make sure the script tag is in index.html.");
-    } else if (!isEnvConfigValid) {
-         console.error("Supabase configuration invalid or missing. Check environment variables and build step.");
     }
 } catch (error) {
     console.error("Error initializing Supabase client:", error);
@@ -130,9 +101,8 @@ try {
 
 // --- Supabase Logging Function ---
 async function logOperationToSupabase(logData) {
-    // Also check isEnvConfigValid here before attempting to use supabase
-    if (!supabase || !isEnvConfigValid) {
-        // console.log("Supabase not initialized or config invalid, skipping log.");
+    if (!supabase) {
+        // console.log("Supabase not initialized, skipping log."); // Optional: Reduce console noise
         return;
     }
 
@@ -167,22 +137,22 @@ async function logOperationToSupabase(logData) {
 
 
 // --- Encoding/Decoding Logic (Core functions - unchanged) ---
-function url_char_to_vocab_index(ch) {
+function url_char_to_vocab_index(ch) { /* ... unchanged ... */
     let i = url_group1_chars.indexOf(ch); if (i !== -1) return [i, i + 62, i + 124].filter(idx => idx < vocab.length);
     i = url_group2_chars.indexOf(ch); if (i !== -1) { const start = 186 + i * 5; return range(start, start + 5).filter(idx => idx < vocab.length); }
     i = url_group3_chars.indexOf(ch); if (i !== -1) { const start = 236 + i * 2; return range(start, start + 2).filter(idx => idx < vocab.length); } return [];
 }
-function id_char_to_vocab_index(ch) {
+function id_char_to_vocab_index(ch) { /* ... unchanged ... */
     let i = id_group1_chars.indexOf(ch); if (i !== -1) return [i, i + 62, i + 124].filter(idx => idx < vocab.length);
     i = id_group2_chars.indexOf(ch); if (i !== -1) { const start = 186 + i * 14; return range(start, start + 14).filter(idx => idx < vocab.length); } return [];
 }
-function abc_char_to_vocab_index(ch) {
+function abc_char_to_vocab_index(ch) { /* ... unchanged ... */
     if (ch === ' ') return range(0, 8); let i = abc_group2_chars.indexOf(ch); if (i !== -1) { const start = 8 + i * 4; return range(start, start + 4).filter(idx => idx < vocab.length); }
     i = abc_group3_chars.indexOf(ch); if (i !== -1) { const start = 88 + i * 3; return range(start, start + 3).filter(idx => idx < vocab.length); }
     i = abc_group4_chars.indexOf(ch); if (i !== -1) { const start = 214 + i * 2; return range(start, start + 2).filter(idx => idx < vocab.length); }
     i = abc_group5_chars.indexOf(ch); if (i !== -1) { const vocab_index = 234 + i; return vocab_index < vocab.length ? [vocab_index] : []; } return [];
 }
-function chinese_to_words(text) {
+function chinese_to_words(text) { /* ... unchanged ... */
     if (text.length > 10) throw new Error("文本长度超过限制，最多支持10个字符。"); let result_words = [];
     for (const char of text) { const charCode = char.charCodeAt(0); if (!(charCode >= CHINESE_UNICODE_START && charCode <= CHINESE_UNICODE_END)) continue;
         const hexCode = charCode.toString(16).padStart(4, '0'); const firstHex = hexCode.substring(0, 2); const secondHex = hexCode.substring(2, 4);
@@ -190,51 +160,51 @@ function chinese_to_words(text) {
         const secondIndex = parseInt(secondHex, 16); if (secondIndex < vocab.length) result_words.push(vocab[secondIndex]); }
     return result_words.map((w, i) => `${i + 1}. ${w}`).join(' ');
 }
-function magnet_to_words(magnet) {
+function magnet_to_words(magnet) { /* ... unchanged ... */
     let hexStr = ""; if (magnet.startsWith("magnet:?xt=urn:btih:")) hexStr = magnet.split("urn:btih:")[1].toUpperCase(); else if (magnet.startsWith("0x")) hexStr = magnet.substring(2).toUpperCase(); else throw new Error("输入的暗语格式不支持转换");
     if (!/^[0-9A-F]{40}$/.test(hexStr)) throw new Error("磁力或地址格式无效 (需要40个十六进制字符)"); const pairs = hexStr.match(/.{1,2}/g) || []; const indices = pairs.map(pair => parseInt(pair, 16)); const valid_words = indices.map(idx => idx < vocab.length ? vocab[idx] : null).filter(w => w !== null);
     return valid_words.map((word, i) => `${i + 1}. ${word}`).join(' ');
 }
-function url_to_words(url) {
+function url_to_words(url) { /* ... unchanged ... */
     let remainder = ""; let prefix = ""; if (url.startsWith("https://t.me/")) { prefix = "https://t.me/"; remainder = url.substring(prefix.length); } else if (url.startsWith("https://")) { prefix = "https://"; remainder = url.substring(prefix.length); } else throw new Error("输入的链接前缀不支持。");
     const result_words = []; let i = 0; const sortedSpecialChars = [...url_group2_chars, ...url_group3_chars].sort((a, b) => b.length - a.length);
     while (i < remainder.length) { let matched = false; for (const specialChar of sortedSpecialChars) { if (remainder.substring(i, i + specialChar.length).toLowerCase() === specialChar.toLowerCase()) { const candidates = url_char_to_vocab_index(specialChar); if (candidates.length > 0) { const chosenIndex = randomChoice(candidates); if (chosenIndex < vocab.length) result_words.push(vocab[chosenIndex]); } i += specialChar.length; matched = true; break; } } if (matched) continue;
         const ch = remainder[i]; const candidates = url_char_to_vocab_index(ch); if (candidates.length > 0) { const chosenIndex = randomChoice(candidates); if (chosenIndex < vocab.length) result_words.push(vocab[chosenIndex]); } else console.warn(`Unsupported URL character skipped: ${ch}`); i++; }
     return result_words.map((w, i) => `${i + 1}. ${w}`).join(' ');
 }
-function id_to_words(id_str) {
+function id_to_words(id_str) { /* ... unchanged ... */
     if (!id_str.startsWith("@")) throw new Error("输入的ID前缀不支持，必须以@开头。"); const remainder = id_str.substring(1); if (remainder.length > 30) throw new Error("ID长度超过限制，最多支持30个字符。");
     const validChars = new Set([...id_group1_chars, ...id_group2_chars]); for (const ch of remainder) if (!validChars.has(ch)) throw new Error(`ID包含不支持的字符: ${ch}`);
     const result_words = []; for (const ch of remainder) { const candidates = id_char_to_vocab_index(ch); if (candidates.length > 0) { const chosenIndex = randomChoice(candidates); if (chosenIndex < vocab.length) result_words.push(vocab[chosenIndex]); } }
     return result_words.map((w, i) => `${i + 1}. ${w}`).join(' ');
 }
-function abc_to_words(text) {
+function abc_to_words(text) { /* ... unchanged ... */
     if (text.length > 30) throw new Error("文本长度超过限制，最多支持30个字符。"); for (const ch of text) { const code = ch.charCodeAt(0); if (!(code >= 32 && code <= 126)) throw new Error(`文本包含不支持的字符: ${ch}，仅支持Unicode 32-126范围内的字符。`); }
     const result_words = []; for (const ch of text) { const candidates = abc_char_to_vocab_index(ch); if (candidates.length > 0) { const chosenIndex = randomChoice(candidates); if (chosenIndex < vocab.length) result_words.push(vocab[chosenIndex]); } }
     return result_words.map((w, i) => `${i + 1}. ${w}`).join(' ');
 }
-function findWordPositions(text) {
+function findWordPositions(text) { /* ... unchanged ... */
     const wordPositions = []; const escapedVocab = vocab.map(word => word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')); const regex = new RegExp(`(${escapedVocab.join('|')})`, 'g'); let match;
     while ((match = regex.exec(text)) !== null) wordPositions.push({ index: match.index, word: match[1] }); wordPositions.sort((a, b) => a.index - b.index); return wordPositions;
 }
-function words_to_magnet(text, prefix) {
+function words_to_magnet(text, prefix) { /* ... unchanged ... */
     const wordPositions = findWordPositions(text); const hex_pairs = wordPositions.map(({ word }) => { const idx = vocabDict.get(word); return idx !== undefined ? idx.toString(16).padStart(2, '0').toUpperCase() : ''; }).filter(hex => hex !== ''); const hex_string = hex_pairs.join('');
     if (prefix === "magnet:?xt=urn:btih:") return `${prefix}${hex_string}`; else if (prefix === "0x") return `${prefix}${hex_string}`; else { console.warn("Unexpected prefix in words_to_magnet:", prefix); return `magnet:?xt=urn:btih:${hex_string}`; }
 }
-function words_to_url(text, prefix) {
+function words_to_url(text, prefix) { /* ... unchanged ... */
     const wordPositions = findWordPositions(text); let reconstructed = ""; for (const { word } of wordPositions) { const idx = vocabDict.get(word); if (idx === undefined) continue; let ch = "";
         if (idx >= 0 && idx < 62) ch = url_group1_chars[idx]; else if (idx >= 62 && idx < 124) ch = url_group1_chars[idx - 62]; else if (idx >= 124 && idx < 186) ch = url_group1_chars[idx - 124];
         else if (idx >= 186 && idx < 236) { const offset = idx - 186; const groupIndex = Math.floor(offset / 5); if (groupIndex < url_group2_chars.length) ch = url_group2_chars[groupIndex]; }
         else if (idx >= 236 && idx < 256) { const offset = idx - 236; const groupIndex = Math.floor(offset / 2); if (groupIndex < url_group3_chars.length) ch = url_group3_chars[groupIndex]; } reconstructed += ch; }
     return prefix + reconstructed;
 }
-function words_to_id(text, prefix = "@") {
+function words_to_id(text, prefix = "@") { /* ... unchanged ... */
     const wordPositions = findWordPositions(text); let reconstructed = ""; for (const { word } of wordPositions) { const idx = vocabDict.get(word); if (idx === undefined) continue; let ch = "";
         if (idx >= 0 && idx < 62) ch = id_group1_chars[idx]; else if (idx >= 62 && idx < 124) ch = id_group1_chars[idx - 62]; else if (idx >= 124 && idx < 186) ch = id_group1_chars[idx - 124];
         else if (idx >= 186 && idx < 256) { const offset = idx - 186; const groupIndex = Math.floor(offset / 14); if (groupIndex < id_group2_chars.length) ch = id_group2_chars[groupIndex]; } reconstructed += ch; }
     return prefix + reconstructed;
 }
-function words_to_abc(text) {
+function words_to_abc(text) { /* ... unchanged ... */
     const wordPositions = findWordPositions(text); let reconstructed = ""; for (const { word } of wordPositions) { const idx = vocabDict.get(word); if (idx === undefined) continue; let ch = "";
         if (idx >= 0 && idx <= 7) ch = " "; else if (idx >= 8 && idx <= 87) { const letter_idx = Math.floor((idx - 8) / 4); if (letter_idx < abc_group2_chars.length) ch = abc_group2_chars[letter_idx]; }
         else if (idx >= 88 && idx <= 213) { const char_idx = Math.floor((idx - 88) / 3); if (char_idx < abc_group3_chars.length) ch = abc_group3_chars[char_idx]; }
@@ -242,47 +212,41 @@ function words_to_abc(text) {
         else if (idx >= 234 && idx < 234 + abc_group5_chars.length) { const symbol_idx = idx - 234; if (symbol_idx < abc_group5_chars.length) ch = abc_group5_chars[symbol_idx]; } reconstructed += ch; }
     return reconstructed;
 }
-function words_to_chinese(text) {
+function words_to_chinese(text) { /* ... unchanged ... */
     const wordPositions = findWordPositions(text); let reconstructed = ""; let i = 0; while (i < wordPositions.length - 1) { const firstWord = wordPositions[i].word; const secondWord = wordPositions[i + 1].word; const firstIdx = vocabDict.get(firstWord); const secondIdx = vocabDict.get(secondWord);
         if (firstIdx !== undefined && secondIdx !== undefined) { const hexFirstIndex = firstIdx % 82; if (hexFirstIndex < CHINESE_HEX_FIRST_CHARS.length) { const hexFirst = CHINESE_HEX_FIRST_CHARS[hexFirstIndex]; const hexSecond = secondIdx.toString(16).padStart(2, '0'); const hexCode = hexFirst + hexSecond; try { const charCode = parseInt(hexCode, 16); if (charCode >= CHINESE_UNICODE_START && charCode <= CHINESE_UNICODE_END) reconstructed += String.fromCharCode(charCode); } catch (e) { console.error(`Failed to convert hex ${hexCode} to char`, e); } } } i += 2; }
     return reconstructed;
 }
 
 // --- AI Interaction & Prompt Generation ---
-function print_vocab_list(word_list) {
+function print_vocab_list(word_list) { /* ... unchanged ... */
     let formatted_text = ""; for (let i = 0; i < word_list.length; i += 10) formatted_text += word_list.slice(i, i + 10).join(' ') + '\n'; return formatted_text.trim();
 }
-function get_forbidden_words(must_use_words_text) {
+function get_forbidden_words(must_use_words_text) { /* ... unchanged ... */
     const allowed_words = (must_use_words_text.match(/\d+\.\s*([^\s]+)/g) || []).map(match => match.replace(/\d+\.\s*/, '')); const allowedSet = new Set(allowed_words); const forbidden_words = vocab.filter(word => !allowedSet.has(word)); return print_vocab_list(forbidden_words);
 }
-function count_punctuations(text) {
+function count_punctuations(text) { /* ... unchanged ... */
     const matches = text.match(/[，。！]/g); return matches ? matches.length : 0;
 }
-function extract_first_seven_punctuations(text) {
+function extract_first_seven_punctuations(text) { /* ... unchanged ... */
     const punctuations = (text.match(/[，。！]/g) || []).slice(0, 7); return punctuations.join('');
 }
-function clean_generated_text(text) {
+function clean_generated_text(text) { /* ... unchanged ... */
     let cleaned = text.replace(/<think>.*?<\/think>/gs, ''); cleaned = cleaned.replace(/\*/g, ''); cleaned = cleaned.replace(/^\d+\.\s*/gm, ''); return cleaned.trim();
 }
-function replace_punctuations(text, new_punctuations_str) {
+function replace_punctuations(text, new_punctuations_str) { /* ... Improved logic - unchanged ... */
     const textChars = text.split(''); const newPunctuations = new_punctuations_str.split(''); let replacementIndex = 0; let i = 0; let lastWasPunc = false;
     while (i < textChars.length && replacementIndex < newPunctuations.length) { if (['，', '。', '！'].includes(textChars[i])) { if (!lastWasPunc) { textChars[i] = newPunctuations[replacementIndex]; replacementIndex++; lastWasPunc = true; } else { textChars.splice(i, 1); i--; } } else { lastWasPunc = false; } i++; }
     while(i < textChars.length) { if (['，', '。', '！'].includes(textChars[i]) && lastWasPunc) { textChars.splice(i, 1); i--; } else { lastWasPunc = ['，', '。', '！'].includes(textChars[i]); } i++; } return textChars.join('');
 }
-function current_ask_ai_text(must_use_words, theme_text = "美好生活") {
+function current_ask_ai_text(must_use_words, theme_text = "美好生活") { /* ... unchanged ... */
     if (!must_use_words || typeof must_use_words !== 'string') throw new Error("must_use_words 参数不能为空且必须是字符串类型"); const forbidden_words_list = get_forbidden_words(must_use_words); const required_word_count = (must_use_words.match(/\d+\./g) || []).length; let extra_condition = ""; if (required_word_count < 7) extra_condition = '\n四、"，" 也可视为一句话，短文不得少于七句话。'; const finalTheme = theme_text && theme_text.trim() !== "" ? theme_text.trim() : "美好生活";
     return `\n你的任务是严格按照以下要求生成一段短文：\n一、这段短文主题为“${finalTheme}”，语言流畅、自然、简短。\n二、必须使用以下词汇，必须严格按照词汇前面的编号依次出现在短文中，不得跳跃、调序、缺失、重复，除非词汇本来就有重复的：\n<required>\n${must_use_words}\n</required>\n三、绝对禁止使用以下词汇（这些词汇绝对不能出现在短文里）：\n<banned>\n${forbidden_words_list}\n</banned>${extra_condition}\n仅返回短文内容，不要包含任何额外解释或说明。\n`.trim();
 }
 
 // --- MODIFIED ask_ai for Streaming ---
 async function ask_ai(apiKey, prompt, baseUrl, model, onChunkReceived, onComplete, onError) {
-    // Check if apiKey is provided (might be null if env var wasn't set for default models)
-    if (!apiKey) {
-        onError("API 密钥未配置。请检查 Vercel 环境变量设置和构建步骤。");
-        return;
-    }
-
-    const effectiveBaseUrl = baseUrl || "https://api.siliconflow.cn/v1"; // Default remains, but might be unused if key is missing
+    const effectiveBaseUrl = baseUrl || "https://api.siliconflow.cn/v1";
     const effectiveModel = model || "deepseek-ai/DeepSeek-V3";
     console.log("Sending streaming request to:", effectiveBaseUrl);
     console.log("Using model:", effectiveModel);
@@ -319,13 +283,7 @@ async function ask_ai(apiKey, prompt, baseUrl, model, onChunkReceived, onComplet
                     errorBody = "Failed to read error details.";
                 }
             }
-            // More specific error for 401 potentially related to bad key
-            if (response.status === 401) {
-                 errorBody = `认证失败 (401)。请检查您的 API 密钥是否正确以及是否有额度。详情: ${errorBody}`;
-            } else {
-                 errorBody = `API 请求失败: ${response.status} ${response.statusText}. 详情: ${errorBody}`;
-            }
-            throw new Error(errorBody);
+            throw new Error(`API request failed: ${response.status} ${response.statusText}. Details: ${errorBody}`);
         }
 
         // Process the stream
@@ -352,6 +310,8 @@ async function ask_ai(apiKey, prompt, baseUrl, model, onChunkReceived, onComplet
                     const dataStr = line.substring(6).trim();
                     if (dataStr === "[DONE]") {
                          console.log("Received [DONE] marker.");
+                         // Some APIs might send this instead of just closing the stream
+                         // We handle the actual end in the 'done' check above, but log it here.
                          continue;
                     }
                     try {
@@ -359,37 +319,46 @@ async function ask_ai(apiKey, prompt, baseUrl, model, onChunkReceived, onComplet
                         if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
                             const chunk = data.choices[0].delta.content;
                             if (chunk) { // Ensure chunk is not empty/null
+                                // Send chunk to the caller
                                 onChunkReceived(chunk);
                             }
                         }
-                         // Handle potential errors within the stream data itself
-                         else if (data.error && data.error.message) {
-                            throw new Error(`API Error in stream: ${data.error.message}`);
-                         }
                     } catch (e) {
-                        console.warn("Failed to parse stream data JSON or API error in stream:", e, "Data:", dataStr);
-                         // If it's a specific API error from the stream, propagate it
-                         if (e.message.startsWith("API Error in stream:")) {
-                            throw e; // Re-throw to be caught by the outer catch block
-                         }
-                         // Otherwise, just warn about parsing and continue if possible
+                        console.warn("Failed to parse stream data JSON:", e, "Data:", dataStr);
+                         // Continue processing other lines, maybe log this error
                     }
                 }
             }
         }
 
-        // Final flush (less critical with SSE, but good practice)
-        // ... (final buffer processing code - generally okay as is) ...
+        // Final flush for any remaining buffer content (though usually handled by stream end)
+        if (buffer.trim().length > 0) {
+             console.log("Processing final buffer content:", buffer);
+             // Attempt to process any final partial line
+             if (buffer.startsWith("data: ")) {
+                 const dataStr = buffer.substring(6).trim();
+                 if (dataStr !== "[DONE]") {
+                      try {
+                          const data = JSON.parse(dataStr);
+                           if (data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content) {
+                               const chunk = data.choices[0].delta.content;
+                               if (chunk) onChunkReceived(chunk);
+                           }
+                      } catch(e) {
+                          console.warn("Failed to parse final buffer JSON:", e, "Data:", dataStr);
+                      }
+                 }
+             }
+        }
 
         // Signal completion to the caller
         onComplete();
 
     } catch (error) {
         console.error("API stream request failed:", error);
-        // Extract the core message, avoiding repetition if already detailed
-        const displayError = error.message.includes("详情:") || error.message.includes("API Error in stream:") ? error.message : `API 请求失败: ${error.message}`;
+        const displayError = error.message.includes("Details:") ? error.message.split("Details:")[1].trim() : error.message;
         // Signal error to the caller
-        onError(displayError);
+        onError(`API 请求失败: ${displayError}`);
     }
 }
 
@@ -432,22 +401,16 @@ let toastTimeout = null;
 let selectedModel = 'Grok-3'; // Default public model
 let selectedProvider = null;
 let selectedPrivateModel = null;
-let currentApiKey = ''; // Active API key (Used ONLY for private keys)
+let currentApiKey = ''; // Active API key
 
 
 // --- Helper Functions ---
-function showToast(message, icon = 'ℹ️', duration = 3000) {
+function showToast(message, icon = 'ℹ️', duration = 3000) { /* ... unchanged ... */
     if (toastTimeout) clearTimeout(toastTimeout); toastMessage.textContent = message; toastIcon.textContent = icon; toastElement.classList.remove('hidden'); void toastElement.offsetWidth; toastTimeout = setTimeout(() => { toastElement.classList.add('hidden'); }, duration);
 }
 
 // --- MODIFIED showLoading for Streaming ---
 function showLoading(isStreaming = false) {
-    // Also check environment config before allowing loading state for embed
-    if (currentMode === 'embed' && !isEnvConfigValid) {
-         displayError("配置错误：无法执行操作，请检查环境变量配置。");
-         return false; // Prevent loading state if config is bad
-    }
-
     outputSection.classList.remove('hidden'); // Show the section
     goIcon.setAttribute('disabled', true);
     userInput.disabled = true;
@@ -464,7 +427,6 @@ function showLoading(isStreaming = false) {
         outputContentWrapper.classList.add('hidden'); // Hide result area
         outputText.textContent = '';
     }
-    return true; // Indicate loading started successfully
 }
 
 // --- MODIFIED hideLoading ---
@@ -472,12 +434,7 @@ function hideLoading() {
     loadingIndicator.classList.add('hidden'); // Hide spinner if it was shown
     // Re-enable controls only if a mode is determined (or after completion/error)
      if (currentMode || outputText.textContent) { // Enable if mode is set OR there's output/error
-         // Don't re-enable GO if config is bad, even if mode is determined
-         if (isEnvConfigValid || currentMode === 'decode') { // Allow decode even with bad env config
-            goIcon.removeAttribute('disabled');
-         } else {
-             goIcon.setAttribute('disabled', true); // Keep disabled if env bad and mode is embed
-         }
+         goIcon.removeAttribute('disabled');
          // Update tooltip based on current mode *after* potential completion/error
          determineModeAndUpdateIcon(userInput.value);
      } else {
@@ -488,25 +445,25 @@ function hideLoading() {
     // Copy button is handled within the streaming callbacks or decode logic
 }
 
-function displayOutput(text, isError = false) {
+function displayOutput(text, isError = false) { /* ... Mostly unchanged, ensures visibility ... */
     outputText.textContent = text;
     outputText.style.color = isError ? 'var(--destructive-color)' : 'var(--text-color)';
     outputSection.classList.remove('hidden'); // Ensure section is visible
     outputContentWrapper.classList.remove('hidden'); // Show result area
     copyButton.disabled = false; // Enable copy button when displaying final result/error
 }
-function displayError(message) {
+function displayError(message) { /* ... unchanged ... */
     displayOutput(`错误：${message}`, true);
     showToast(message, '😅');
     // Ensure output wrapper is shown to display the error
     outputContentWrapper.classList.remove('hidden');
 }
-function validate_url_text(text, max_tokens = 30) {
+function validate_url_text(text, max_tokens = 30) { /* ... unchanged ... */
      if (text.length > max_tokens) return false; let i = 0; const sortedSpecialChars = [...url_group2_chars, ...url_group3_chars].sort((a, b) => b.length - a.length); while (i < text.length) { let matchedSpecial = false; for (const special of sortedSpecialChars) { if (text.substring(i, i + special.length).toLowerCase() === special.toLowerCase()) { i += special.length; matchedSpecial = true; break; } } if (matchedSpecial) continue; if (!url_allowed_chars_set.has(text[i])) return false; i++; } return true;
 }
 
 // --- Mode Determination & Icon Update ---
-function determineModeAndUpdateIcon(input) {
+function determineModeAndUpdateIcon(input) { /* ... unchanged ... */
     const trimmedInput = input.trim();
     let determinedMode = null;
     let determinedSubtype = null;
@@ -588,35 +545,23 @@ function determineModeAndUpdateIcon(input) {
     currentMode = determinedMode;
     currentSubtype = determinedSubtype;
 
-    // Enable/disable GO icon based on whether a valid mode was determined AND env config status
-    const isProcessing = userInput.disabled; // Check if currently processing
-    let allowGo = false;
-
-    if (currentMode === 'embed') {
-        allowGo = isEnvConfigValid; // Allow embed only if env config is valid
-        goIcon.dataset.tooltip = allowGo ? `执行植入 (${currentSubtype}) (回车)` : "执行植入 (配置错误)";
-    } else if (currentMode === 'decode') {
-        allowGo = true; // Allow decode regardless of env config
-        goIcon.dataset.tooltip = "执行提取 (回车)";
-    } else {
-        allowGo = false; // Not a valid mode
+    // Enable/disable GO icon based on whether a valid mode was determined
+    // Check if the user input field is currently enabled (i.e., not processing)
+    if (currentMode && !userInput.disabled) {
+        goIcon.removeAttribute('disabled');
+        // Update Go button tooltip based on the determined mode
+        goIcon.dataset.tooltip = currentMode === 'embed' ? `执行植入 (${currentSubtype}) (回车)` : "执行提取 (回车)";
+    } else if (!userInput.disabled) { // Only disable if not processing
+        goIcon.setAttribute('disabled', true);
+        // Update Go button tooltip when disabled
         goIcon.dataset.tooltip = "执行 (请先输入有效内容)";
     }
-
-    // Only change disabled state if NOT currently processing
-    if (!isProcessing) {
-        if (allowGo) {
-            goIcon.removeAttribute('disabled');
-        } else {
-            goIcon.setAttribute('disabled', true);
-        }
-    }
-    // If processing, goIcon should remain disabled (set by showLoading)
+     // If processing (userInput.disabled is true), leave the goIcon disabled.
 }
 
 
 // --- Event Handlers ---
-userInput.addEventListener('input', () => {
+userInput.addEventListener('input', () => { /* ... unchanged ... */
     determineModeAndUpdateIcon(userInput.value);
     // Hide output immediately on input change
     outputSection.classList.add('hidden');
@@ -626,7 +571,7 @@ userInput.addEventListener('input', () => {
 });
 
 // Enter Key listener for Textarea
-userInput.addEventListener('keydown', (event) => {
+userInput.addEventListener('keydown', (event) => { /* ... unchanged ... */
     // Trigger on Enter press, but not Shift+Enter (for potential future multiline input)
     if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault(); // Prevent default newline behavior
@@ -637,10 +582,7 @@ userInput.addEventListener('keydown', (event) => {
             // Provide context-specific feedback
             if (userInput.disabled) {
                 showToast("请等待当前操作完成", "⏳");
-            } else if (currentMode === 'embed' && !isEnvConfigValid) {
-                showToast("无法执行：环境变量配置错误", "⚙️");
-            }
-             else {
+            } else {
                 showToast("请先输入有效的内容", "🤔");
             }
         }
@@ -649,37 +591,43 @@ userInput.addEventListener('keydown', (event) => {
 
 
 // --- Icon Click Handlers ---
-topicIcon.addEventListener('click', (event) => {
+topicIcon.addEventListener('click', (event) => { /* ... unchanged ... */
     event.stopPropagation();
     topicSelector.classList.toggle('open');
+    // topicOptionContainer.classList.toggle('hidden'); // Managed by .open class
     if (topicSelector.classList.contains('open')) {
         topicInput.focus();
-        modelSelector.classList.remove('open'); // Close other selector
-    }
-});
-
-currentModelIcon.addEventListener('click', (event) => {
-    event.stopPropagation();
-    modelSelector.classList.toggle('open');
-     if (modelSelector.classList.contains('open')) {
-        topicSelector.classList.remove('open'); // Close other selector
-     }
-});
-
-// Close popups when clicking outside
-document.addEventListener('click', (event) => {
-    // Close Model Selector if click is outside its icon and its options panel
-    if (!modelSelector.contains(event.target) && !modelOptionsContainer.contains(event.target)) {
+        // Close model selector if open
         modelSelector.classList.remove('open');
     }
-    // Close Topic Selector if click is outside its icon and its options panel
-    if (!topicSelector.contains(event.target) && !topicOptionContainer.contains(event.target)) {
+});
+
+currentModelIcon.addEventListener('click', (event) => { /* ... unchanged ... */
+    event.stopPropagation();
+    modelSelector.classList.toggle('open');
+    // modelOptionsContainer.classList.toggle('hidden'); // Managed by .open class
+    if (modelSelector.classList.contains('open')) {
+         // Close topic selector if open
         topicSelector.classList.remove('open');
     }
 });
 
+// Close popups when clicking outside
+document.addEventListener('click', (event) => { /* ... MODIFIED to handle new logic ... */
+    // Close Model Selector if click is outside its icon and its options panel
+    if (!modelSelector.contains(event.target) && !modelOptionsContainer.contains(event.target)) {
+        modelSelector.classList.remove('open');
+        // modelOptionsContainer.classList.add('hidden'); // Not needed if CSS handles .open
+    }
+    // Close Topic Selector if click is outside its icon and its options panel
+    if (!topicSelector.contains(event.target) && !topicOptionContainer.contains(event.target)) {
+        topicSelector.classList.remove('open');
+        // topicOptionContainer.classList.add('hidden'); // Not needed if CSS handles .open
+    }
+});
 
-modelOptionsContainer.addEventListener('click', (event) => {
+
+modelOptionsContainer.addEventListener('click', (event) => { /* ... unchanged ... */
     const clickedIcon = event.target.closest('.model-option-icon');
     if (clickedIcon) {
         const newModel = clickedIcon.dataset.model;
@@ -689,55 +637,31 @@ modelOptionsContainer.addEventListener('click', (event) => {
             openApiKeyModal();
             // Don't update the main icon tooltip yet, wait for save
         } else {
-            // Check if the selected default model has a valid key from env vars
-             const config = PROVIDER_CONFIG[newModel];
-             if (config && !config.default_key) {
-                 showToast(`模型 ${newModel} 的默认 API 密钥未配置 (环境变量缺失或构建错误)`, '⚠️');
-                 // Optionally prevent selection or revert to previous? For now, allow selection but warn.
-             } else if (!config) {
-                  showToast(`模型 ${newModel} 的配置信息缺失`, '⚙️');
-             }
-             else {
-                 showToast(`已选择模型: ${newModel}`, '🤖');
-             }
-
             selectedModel = newModel; // Update state
             currentModelIcon.src = clickedIcon.src;
             currentModelIcon.alt = clickedIcon.alt;
             // Update the main model icon's tooltip based on the selected option's tooltip
             currentModelIcon.dataset.tooltip = `模型: ${optionTooltip}`;
             currentModelIcon.dataset.model = newModel;
+            showToast(`已选择模型: ${newModel}`, '🤖');
         }
         modelSelector.classList.remove('open');
+        // modelOptionsContainer.classList.add('hidden'); // Not needed if CSS handles .open
     }
 });
 
-goIcon.addEventListener('click', () => {
-    if (goIcon.hasAttribute('disabled')) {
-        // Provide feedback if disabled due to config error
-         if (currentMode === 'embed' && !isEnvConfigValid) {
-             showToast("无法执行：环境变量配置错误", "⚙️");
-         }
-        return;
-    }
+goIcon.addEventListener('click', () => { /* ... unchanged ... */
+    if (goIcon.hasAttribute('disabled')) return; // Prevent action if disabled
 
     if (!currentMode) {
         showToast("无法确定操作模式，请检查输入内容", '🤔');
         return;
     }
-
-    // Double check env config before embed
-    if (currentMode === 'embed' && !isEnvConfigValid) {
-         showToast("无法执行植入：环境变量配置错误", "⚙️");
-         displayError("配置错误：无法执行操作，请检查环境变量配置。");
-         return;
-    }
-
     if (currentMode === 'embed') handleEmbed();
     else if (currentMode === 'decode') handleDecode();
 });
 
-copyButton.addEventListener('click', () => {
+copyButton.addEventListener('click', () => { /* ... unchanged ... */
     const textToCopy = outputText.textContent;
     if (!textToCopy) {
         showToast("没有内容可复制", '🤷');
@@ -755,17 +679,17 @@ copyButton.addEventListener('click', () => {
 
 
 // --- API Key Modal Logic ---
-function openApiKeyModal() {
+function openApiKeyModal() { /* ... unchanged ... */
     populateProviderRadios(); // Populate providers first
     loadApiKeySettings(); // Load settings which might trigger model population
     apiKeyModal.classList.remove('hidden');
     modalBackdrop.classList.remove('hidden');
 }
 
-window.closeApiKeyModal = function() {
+window.closeApiKeyModal = function() { /* ... unchanged ... */
     apiKeyModal.classList.add('hidden'); modalBackdrop.classList.add('hidden');
 }
-window.saveApiKeySettings = function() {
+window.saveApiKeySettings = function() { /* ... unchanged ... */
     const key = userApiKeyInput.value.trim();
     const providerRadio = providerSelectionContainer.querySelector('input[name="providerChoice"]:checked');
     const modelRadio = modelSelectionPrivateContainer.querySelector('input[name="privateModelChoice"]:checked');
@@ -784,7 +708,7 @@ window.saveApiKeySettings = function() {
     selectedModel = 'private'; // Update internal state
     selectedProvider = provider;
     selectedPrivateModel = model;
-    currentApiKey = key; // Store the *private* key for use
+    currentApiKey = key;
 
     // Update the main model icon appearance and tooltip
     const apiKeyOptionIcon = document.getElementById('icon-action-apikey');
@@ -799,7 +723,7 @@ window.saveApiKeySettings = function() {
     closeApiKeyModal();
 }
 
-function populateProviderRadios() {
+function populateProviderRadios() { /* ... unchanged ... */
     providerSelectionContainer.innerHTML = ''; let isFirst = true; const savedProvider = localStorage.getItem('aiAnhaoSelectedProvider');
     for (const providerName in PRIVATE_PROVIDER_CONFIG) { const label = document.createElement('label'); const input = document.createElement('input'); input.type = 'radio'; input.name = 'providerChoice'; input.value = providerName;
         if (savedProvider === providerName) { input.checked = true; isFirst = false; } else if (isFirst && !savedProvider) { input.checked = true; isFirst = false; }
@@ -808,7 +732,7 @@ function populateProviderRadios() {
 }
 
 // Modified to ensure models populate correctly based on saved/selected provider
-function populatePrivateModelRadios(providerName = null) {
+function populatePrivateModelRadios(providerName = null) { /* ... unchanged logic ... */
     modelSelectionPrivateContainer.innerHTML = '';
     let targetProviderName = providerName;
     // If providerName wasn't passed directly (e.g., from load settings), get the currently checked one
@@ -859,15 +783,9 @@ function populatePrivateModelRadios(providerName = null) {
     }
 }
 
-function loadApiKeySettings() {
-    // Load PRIVATE key if saved - DO NOT load default keys from env here
+function loadApiKeySettings() { /* ... Corrected logic integrated into populate functions ... */
     const savedKey = localStorage.getItem('aiAnhaoApiKey');
-    if (savedKey) {
-        userApiKeyInput.value = savedKey;
-        currentApiKey = savedKey; // Store the *private* key for use when 'private' model selected
-    } else {
-        currentApiKey = ''; // Ensure it's empty if nothing saved
-    }
+    if (savedKey) { userApiKeyInput.value = savedKey; currentApiKey = savedKey; }
     // Provider and model checking is handled by populateProviderRadios based on localStorage
 }
 
@@ -879,29 +797,24 @@ async function handleEmbed() {
         showToast("输入内容无法识别为可植入类型", '😅');
         return;
     }
-     // Final check before proceeding
-    if (!isEnvConfigValid) {
-        displayError("配置错误：无法执行操作，请检查环境变量配置。");
-        return;
-    }
-
     const theme = topicInput.value.trim() || "无主题"; // Get theme here
-    let apiKey = ""; // Key to be used for the call
+    let apiKey = "";
     let baseUrl = null;
     let modelParam = null;
     let effectiveModelName = selectedModel; // Start with public or 'private'
 
-    // Determine API Key, Base URL, and Model Parameter
+    // Determine API Key, Base URL, and Model Parameter (Unchanged logic)
     if (selectedModel === 'private') {
-        // Use the key saved from the modal (stored in currentApiKey)
+        // ... (Private key logic - unchanged) ...
+        const savedKey = localStorage.getItem('aiAnhaoApiKey');
         const savedProvider = localStorage.getItem('aiAnhaoSelectedProvider');
         const savedPrivateModel = localStorage.getItem('aiAnhaoSelectedPrivateModel');
-        if (!currentApiKey || !savedProvider || !savedPrivateModel) { // Check currentApiKey specifically
+        if (!savedKey || !savedProvider || !savedPrivateModel) {
             showToast("请先设置并保存您的私人 API 密钥", '🔑');
             openApiKeyModal();
             return;
         }
-        apiKey = currentApiKey; // Use the key stored in JS memory from save/load
+        apiKey = savedKey;
         const providerConfig = PRIVATE_PROVIDER_CONFIG[savedProvider];
         if (providerConfig && providerConfig.models && providerConfig.models[savedPrivateModel]) {
             baseUrl = providerConfig.base_url;
@@ -912,27 +825,24 @@ async function handleEmbed() {
             return;
         }
     } else {
-        // Use the default key for the selected public model (already read from env)
+        // ... (Public key logic - unchanged) ...
         const config = PROVIDER_CONFIG[selectedModel];
         if (!config) {
             showToast("无法找到所选模型的配置", "⚙️");
             return;
         }
-        apiKey = config.default_key; // Get the key from PROVIDER_CONFIG (sourced from ENV_CONFIG)
+        apiKey = config.default_key;
         baseUrl = config.base_url;
         modelParam = config.model_param;
         effectiveModelName = selectedModel;
-
-        // Check if the default key was actually loaded from environment
         if (!apiKey) {
-            showToast(`模型 ${selectedModel} 的默认 API 密钥未在环境变量中配置或构建失败`, '⚠️');
-            displayError(`配置错误: 模型 ${selectedModel} 的 API 密钥缺失。`);
-            return; // Stop execution
+            showToast(`模型 ${selectedModel} 的默认 API 密钥未设置`, '⚠️');
+            return;
         }
     }
 
-    // Prepare UI for streaming (showLoading already includes env check)
-    if (!showLoading(true)) return; // Stop if showLoading prevented it
+    // Prepare UI for streaming
+    showLoading(true); // Pass true to indicate streaming start
 
     let must_use_words = "";
     let expected_punctuation = "";
@@ -1019,19 +929,17 @@ async function handleEmbed() {
             } finally {
                 hideLoading(); // Re-enable controls
                  copyButton.disabled = false; // Ensure copy is enabled after completion/error
-                // Log the operation (only if supabase is configured)
-                 if (supabase) {
-                    logOperationToSupabase({
-                        status: operation_status,
-                        userInput: input,
-                        theme: theme,
-                        generatedText: final_output_text, // Log the final text (punctuated or cleaned on error)
-                        mode: 'embed',
-                        subtype: currentSubtype,
-                        modelUsed: effectiveModelName,
-                        errorMessage: error_message
-                    });
-                }
+                // Log the operation
+                logOperationToSupabase({
+                    status: operation_status,
+                    userInput: input,
+                    theme: theme,
+                    generatedText: final_output_text, // Log the final text (punctuated or cleaned on error)
+                    mode: 'embed',
+                    subtype: currentSubtype,
+                    modelUsed: effectiveModelName,
+                    errorMessage: error_message
+                });
             }
         };
 
@@ -1043,19 +951,17 @@ async function handleEmbed() {
             operation_status = 'fail';
             hideLoading(); // Re-enable controls
             copyButton.disabled = false; // Enable copy even on error
-            // Log the failure (only if supabase is configured)
-             if (supabase) {
-                logOperationToSupabase({
-                    status: operation_status,
-                    userInput: input,
-                    theme: theme,
-                    generatedText: final_output_text,
-                    mode: 'embed',
-                    subtype: currentSubtype,
-                    modelUsed: effectiveModelName,
-                    errorMessage: error_message
-                });
-            }
+            // Log the failure
+            logOperationToSupabase({
+                status: operation_status,
+                userInput: input,
+                theme: theme,
+                generatedText: final_output_text,
+                mode: 'embed',
+                subtype: currentSubtype,
+                modelUsed: effectiveModelName,
+                errorMessage: error_message
+            });
         };
 
         // 3. Call AI with stream handling
@@ -1071,19 +977,17 @@ async function handleEmbed() {
         copyButton.disabled = false; // Ensure copy is enabled
         final_output_text = null; // No AI text generated yet
         operation_status = 'fail';
-        // Log the initial failure (only if supabase is configured)
-         if (supabase) {
-            logOperationToSupabase({
-                status: operation_status,
-                userInput: input,
-                theme: theme,
-                generatedText: final_output_text,
-                mode: 'embed',
-                subtype: currentSubtype,
-                modelUsed: effectiveModelName,
-                errorMessage: error_message
-            });
-        }
+        // Log the initial failure
+        logOperationToSupabase({
+            status: operation_status,
+            userInput: input,
+            theme: theme,
+            generatedText: final_output_text,
+            mode: 'embed',
+            subtype: currentSubtype,
+            modelUsed: effectiveModelName,
+            errorMessage: error_message
+        });
     }
      // Note: The final logging is now done within handleComplete or handleError callbacks
 }
@@ -1105,6 +1009,7 @@ function handleDecode() {
     setTimeout(() => {
         try {
             const first_seven = extract_first_seven_punctuations(input);
+            // prefixType = ""; // Already defined above
 
             switch (first_seven) {
                 case "，，，，，，，": prefixType = 'magnet'; break;
@@ -1165,25 +1070,23 @@ function handleDecode() {
         } finally {
             hideLoading();
             copyButton.disabled = (operation_status !== 'success'); // Disable copy if decode failed
-            // Log the operation (only if supabase is configured)
-             if (supabase) {
-                logOperationToSupabase({
-                    status: operation_status,
-                    userInput: input,
-                    theme: null, // No theme for decode
-                    generatedText: decoded, // Log the decoded result (or null if failed)
-                    mode: 'decode',
-                    subtype: prefixType || null, // Log the detected subtype if any
-                    modelUsed: null, // No AI model for decode
-                    errorMessage: error_message // Log null if successful
-                });
-             }
+            // Log the operation
+            logOperationToSupabase({
+                status: operation_status,
+                userInput: input,
+                theme: null, // No theme for decode
+                generatedText: decoded, // Log the decoded result (or null if failed)
+                mode: 'decode',
+                subtype: prefixType || null, // Log the detected subtype if any
+                modelUsed: null, // No AI model for decode
+                errorMessage: error_message // Log null if successful
+            });
         }
     }, 10); // Small delay
 }
 
 // . 为话题输入框添加事件监听器
-document.getElementById('topicInput').addEventListener('input', function() {
+document.getElementById('topicInput').addEventListener('input', function() { /* ... unchanged ... */
     if (this.value.length > 10) {
         // 截断输入值到最大长度
         this.value = this.value.substring(0, 10);
@@ -1194,22 +1097,14 @@ document.getElementById('topicInput').addEventListener('input', function() {
 });
 
 // --- PWA Service Worker Registration ---
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator) { /* ... unchanged ... */
   window.addEventListener('load', () => { navigator.serviceWorker.register('./service-worker.js').then(reg => console.log('SW registered.', reg.scope)).catch(err => console.log('SW reg failed:', err)); });
 }
 
 // --- Initial UI Setup ---
-function initializeApp() {
+function initializeApp() { /* ... unchanged ... */
     console.log("Initializing App...");
-    // Check config status FIRST
-    if (!isEnvConfigValid) {
-         showToast("配置错误: 无法加载环境变量", "⚙️");
-         // Optionally disable parts of the UI further
-         goIcon.setAttribute('disabled', true);
-         goIcon.dataset.tooltip = "执行 (配置错误)";
-    }
-
-    loadApiKeySettings(); // Load PRIVATE API key value
+    loadApiKeySettings(); // Load API key value
 
     // Set default states and populate dynamic elements
     populateProviderRadios(); // Populate providers, which triggers model population based on saved/default
@@ -1219,7 +1114,7 @@ function initializeApp() {
     const savedProvider = localStorage.getItem('aiAnhaoSelectedProvider');
     const savedPrivateModel = localStorage.getItem('aiAnhaoSelectedPrivateModel');
 
-    // Update the main model icon based on saved settings or default public model
+    // Update the main model icon based on saved settings or default
     if (savedApiKey && savedProvider && savedPrivateModel) {
         const apiKeyOptionIcon = document.getElementById('icon-action-apikey');
         if (apiKeyOptionIcon) {
@@ -1242,17 +1137,10 @@ function initializeApp() {
              currentModelIcon.dataset.model = defaultModelOption.dataset.model;
              selectedModel = defaultModelOption.dataset.model; // Sync state
              console.log("Set default public model state.");
-
-             // Check if the default public model has a valid key
-             const config = PROVIDER_CONFIG[defaultPublicModel];
-             if (!config || !config.default_key) {
-                 showToast(`默认模型 ${defaultPublicModel} 的 API 密钥未配置`, '⚠️');
-                 currentModelIcon.dataset.tooltip += " (密钥缺失)"; // Append warning to tooltip
-             }
-
          } else {
              console.error("Default public model icon not found in store!");
-             currentModelIcon.dataset.tooltip = "选择 AI 模型 (配置错误)";
+             // Set a fallback tooltip if icon is missing
+             currentModelIcon.dataset.tooltip = "选择 AI 模型";
          }
     }
 
