@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <!-- MODIFIED: Added maximum-scale=1.0, user-scalable=no to prevent zooming -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#007aff"> <!-- Ensure theme-color matches manifest -->
+    <title>$AIAY Token Plan</title>
+    <link rel="stylesheet" href="style.css"> <!-- Link existing stylesheet -->
+    <link rel="manifest" href="manifest.json"> <!-- Link manifest -->
+    <!-- Add necessary icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    <!-- Custom style from Token 计划.py for specific tags on this page -->
+    <style>
+        blockquote {
+            border-left: 4px solid var(--border-color);
+            padding-left: 15px;
+            margin-left: 0;
+            margin-right: 0;
+            color: var(--secondary-text-color);
+            font-style: italic;
+        }
+        /* Style from Python script */
+        .token-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            background-color: #f2f2f2;  /* Default background color */
+            border-radius: 5px;        /* Rounded corners */
+            margin: 0 2px;
+            transition: background-color 0.3s;  /* Smooth color transition */
+            color: var(--text-color); /* Ensure text color fits theme */
+            text-decoration: none; /* Remove underline from links inside */
+            border: 1px solid var(--border-color); /* Add subtle border like index.html tags */
+            line-height: 1; /* Adjust line-height for better image alignment */
+        }
+        .token-tag:hover {
+            background-color: #cfcfcf;  /* Hover background color */
+        }
+        .token-tag:active {
+            background-color: #cfcfcf;  /* Active background color */
+        }
+        .token-tag img { /* Style for image inside the tag */
+            vertical-align: middle;
+            width: 20px; /* Control size */
+            height: 20px; /* Control size */
+            border-radius: 10px; /* Circular/rounded image */
+            margin-right: 4px; /* Space between image and text */
+        }
+         /* Dark mode adaptation for the custom tag */
+        @media (prefers-color-scheme: dark) {
+            .token-tag {
+                background-color: var(--input-bg-color); /* Use theme variable */
+                color: var(--secondary-text-color);
+            }
+            .token-tag:hover, .token-tag:active {
+                 background-color: #3a3a3c; /* Darker hover for token tag */
+                 color: #cffd51; /* Highlight text on hover */
+            }
+        }
+        /* Adjust list spacing */
+        .content-section ul, .content-section ol {
+            padding-left: 25px; /* More indent */
+            margin-bottom: 15px;
+        }
+        .content-section li {
+            margin-bottom: 8px;
+        }
+         /* Header alignment adjustment */
+         .app-header .logo-link {
+             display: inline-flex; /* Align image correctly */
+             vertical-align: middle; /* Align with text */
+             margin-right: 15px; /* Add space */
+         }
+          .app-header h1 {
+             /* Adjust if needed */
+             display: inline-block;
+             vertical-align: middle;
+             font-size: 1.7em; /* Slightly smaller to fit better potentially */
+             line-height: 1.2;
+         }
+
+         /* Ensure header logo maintains its look */
+        .app-header .logo {
+            width: 50px; /* Keep original size */
+            height: 50px; /* Keep original size */
+            border-radius: 8px;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.1);
+            /* Remove potential borders added by browser defaults to img inside links */
+            border: none;
+         }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header similar to index.html -->
+        <header class="app-header">
+            <!-- Logo linked to main site, using SVG file -->
+            <a href="https://aianyu.xyz" target="_self" class="logo-link">
+                <img src="icons/aianyu.svg" alt="AI 暗语 Logo" class="logo"/>
+            </a>
+            <!-- Page Title -->
+            <h1>$AIAY Token Plan</h1>
+        </header>
+
+        <!-- Content Section -->
+        <section class="content-section">
+
+            <blockquote>这只是一场有趣的社会实验。</blockquote>
+
+            <h5>什么是 AI 暗语？</h5>
+            <p>AI 暗语是一种基于人工智能技术生成的独特语言。它依赖于一套预定义的词汇表，以及将字符映射到这些词汇的特定规则，由 AI 负责具体的生成过程。</p>
+
+            <h5>为何发起 $AIAY Token 激励计划？</h5>
+            <p>AI 暗语的核心——其词汇表和映射规则——的建立与完善，本质上是一个需要<strong>社群共识</strong>的过程，它的生命力在于其使用群体和共同认可。</p>
+            <p>然而，要将 AI 暗语从概念推向成熟，需要持续的技术研发、庞大的数据支持、广泛的应用实践以及相应的资金投入。这远非个人力量所能及。我深知，仅凭一己之力，无论在技术探索还是资源整合上都十分有限。</p>
+            <p>因此，我们构想推出 <strong>$AIAY Token 计划</strong>。其核心目标是：<strong>激励并凝聚更广泛的社群力量，共同参与到 AI 暗语的建设与推广中</strong>。我们相信，通过有效的激励机制，可以汇聚智慧、资源与热情，从而实现：</p>
+            <ul>
+                <li><strong>更广泛的参与</strong>： 吸引开发者、研究者、爱好者和用户加入。</li>
+                <li><strong>更强大的共识</strong>： 共同决策词汇表、规则优化等关键问题。</li>
+                <li><strong>更深远的影响力</strong>： 推动 AI 暗语在更多领域得到认知和应用。</li>
+            </ul>
+
+            <h5>我们的发展目标：</h5>
+            <p>通过社群的共同努力，我们期望在以下方面取得突破：</p>
+            <ol>
+                <li><strong>核心技术优化</strong>：
+                    <ul>
+                        <li>研发或微调<strong>专用的 AI 大模型</strong>，使其更懂 AI 暗语的生成逻辑。</li>
+                        <li><strong>提升短文生成效率</strong>，实现快速响应。</li>
+                        <li>改进生成提示词，产出<strong>更自然流畅</strong>的 AI 暗语表达。</li>
+                        <li>持续迭代，建立<strong>更科学、更适应性强的词汇表</strong>。</li>
+                        <li>探索并优化字符与词汇的映射规则，<strong>平衡效率与表达力</strong>。</li>
+                    </ul>
+                </li>
+                <li><strong>多语言与跨平台支持</strong>：
+                    <ul>
+                        <li>逐步<strong>支持更多源语言</strong>到 AI 暗语，例如英语。</li>
+                        <li>开发覆盖 <strong>Windows / macOS / iOS / Android / Linux</strong> 等主流操作系统的应用程序。</li>
+                    </ul>
+                </li>
+                <li><strong>应用生态拓展</strong>：
+                    <ul>
+                        <li>开发<strong>全平台 SDK、社交应用小程序、浏览器插件、网页嵌入组件等</strong>轻量级应用形态。</li>
+                        <li>帮助更多的企业和社群开发<strong>行业专属的 AI 暗语</strong>应用。</li>
+                        <li>探索和赋能<strong>更多的创新应用场景</strong>，例如加密通讯等。</li>
+                    </ul>
+                </li>
+                <li><strong>社群与影响力建设</strong>：
+                    <ul>
+                        <li>鼓励<strong>名人、意见领袖 (KOL) 的示范性使用</strong>，带动早期采纳和社群活跃度。</li>
+                    </ul>
+                </li>
+            </ol>
+            <p>我们诚邀所有对 AI 与语言创新感兴趣的朋友，一同加入这场探索，共建 AI 暗语的未来！</p>
+
+            <h5>什么时候开启？</h5>
+            <p><strong>$AIAY Token 计划将在 AI 暗语的成功生成数量突破 100,000 之后正式开启！</strong></p>
+            <p>届时会开启 Token Airdrop 活动，请关注：
+                <span class="token-tag">
+                    <a href="https://x.com/Ai_AnYu" target="_blank" style="text-decoration: none; color: inherit;">
+                        <!-- Using SVG file for the inline logo -->
+                        <img src="icons/aianyu.svg" alt="AI AnYu Logo"/> @Ai_AnYu
+                    </a>
+                </span>
+            </p>
+
+        </section>
+
+    </div>
+    <!-- No script needed for this static page unless interactivity is added later -->
+    <!-- <script src="script.js"></script> -->
+</body>
+</html>
