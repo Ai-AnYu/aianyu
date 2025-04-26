@@ -63,7 +63,7 @@ const CHINESE_HEX_FIRST_CHARS = Array.from({ length: 0xa0 - 0x4e }, (_, i) => (0
 
 // --- MODIFIED PROVIDER_CONFIG (Removed default_key) ---
 const PROVIDER_CONFIG = {
-    "Grok-3": { provider: "XAI", base_url: "https://pure-dodo-84.deno.dev/xai/v1", model_param: "grok-3" },
+    "Grok-3": { provider: "XAI", base_url: "https://api-proxy.me/xai/v1", model_param: "grok-3" },
     "Doubao-1.5-pro-256k": { provider: "火山引擎", base_url: "https://ark.cn-beijing.volces.com/api/v3", model_param: "doubao-1-5-pro-256k-250115" },
     "Deepseek-v3.0": { provider: "硅基流动", base_url: "https://api.siliconflow.cn/v1", model_param: "deepseek-ai/DeepSeek-V3" },
     "private": { provider: "private" }
@@ -74,7 +74,7 @@ const PRIVATE_PROVIDER_CONFIG = {
     "硅基流动": { base_url: "https://api.siliconflow.cn/v1", models: { "Deepseek-v3.0": "deepseek-ai/DeepSeek-V3", "Deepseek-vR1": "deepseek-ai/DeepSeek-R1" } },
     "阿里百练": { base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1", models: { "Deepseek-v3.0": "deepseek-v3", "Deepseek-vR1": "deepseek-r1" } },
     "NVIDIA": { base_url: "https://integrate.api.nvidia.com/v1", models: { "Deepseek-vR1": "deepseek-ai/deepseek-r1" } },
-    "Grok x.com": { base_url: "https://api.x.ai/v1", models: { "Grok-3-mini": "grok-3-mini-latest", "Grok-3": "grok-3-latest" } }
+    "Grok x.com": { base_url: "https://api-proxy.me/xai/v1", models: { "Grok-3-mini": "grok-3-mini-latest", "Grok-3": "grok-3-latest" } }
 };
 const url_allowed_single_special = new Set([...url_group2_chars, ...url_group3_chars].filter(c => c.length === 1));
 const url_allowed_chars_set = new Set([...url_group1_chars, ...url_allowed_single_special]);
