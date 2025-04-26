@@ -99,62 +99,104 @@ self.addEventListener('fetch', event => {
     // Improved check for common API paths
     const isApiRequest = event.request.method === 'POST' && /\/(v1|v3)\/(chat\/completions|api)/.test(event.request.url);
     if (isApiRequest) {
+        // For API requests, always go to the network
         event.respondWith(fetch(event.request));
         return;
     }
 
-     // Cache-first strategy for other requests (mainly GET)
+    // --- START MODIFICATION ---
+    // Network-first strategy for navigation requests (HTML pages)
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request)
+            .then(networkResponse => {
+                // Check if we received a valid response (status 200 OK)
+                if (networkResponse && networkResponse.ok) {
+                    // Clone the response to cache it for offline use
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, responseToCache).catch(putError => {
+                            console.error(`Failed to cache navigation request ${event.request.url}:`, putError);
+                        });
+                    });
+                } else if (networkResponse) {
+                     // Log if the network response wasn't ok, but still return it
+                     console.warn(`Network fetch for navigation ${event.request.url} failed with status ${networkResponse.status}. Not caching.`);
+                }
+                // Return the network response directly (even if not ok, let browser handle errors)
+                return networkResponse;
+            })
+            .catch(error => {
+                // Network fetch failed (e.g., offline)
+                console.warn(`Network fetch failed for navigation ${event.request.url}. Trying cache.`, error);
+                // Try to serve the page from the cache as a fallback
+                return caches.match(event.request)
+                    .then(cachedResponse => {
+                        if (cachedResponse) {
+                            return cachedResponse; // Serve from cache if available
+                        }
+                        // Optional: If you have a specific offline page cached, you could return it here
+                        // return caches.match('/offline.html');
+                        // If no cache match, let the browser show its default offline error
+                        // Re-throwing the error ensures the browser knows the fetch failed
+                        throw error;
+                    });
+            })
+        );
+        return; // Important: Stop further processing for navigation requests
+    }
+    // --- END MODIFICATION ---
+
+
+    // Cache-first strategy for all other requests (CSS, JS, images, fonts, etc.)
     event.respondWith(
         caches.match(event.request)
         .then(response => {
-            // Cache hit - return response
+            // Cache hit - return response from cache
             if (response) {
                 return response;
             }
 
             // Not in cache - fetch from network
             return fetch(event.request).then(
-            networkResponse => {
-                // Check if we received a valid response
-                 // Allow caching opaque responses for specific external resources if offline use is desired
-                 const isValidResponse = networkResponse && networkResponse.ok;
-                 const isOpaqueFont = networkResponse.type === 'opaque' && event.request.url.includes('googleapis'); // Example for fonts
+                networkResponse => {
+                    // Check if we received a valid response to cache
+                    // Allow caching valid responses (ok) and specific opaque responses (like fonts)
+                    const isValidResponse = networkResponse && networkResponse.ok;
+                    const isOpaqueFont = networkResponse.type === 'opaque' && event.request.url.includes('googleapis'); // Example check for Google Fonts
 
-                 if (!isValidResponse && !isOpaqueFont) {
-                     // Don't cache invalid or non-essential opaque responses
-                     if(networkResponse) {
-                         console.warn(`Not caching invalid response for ${event.request.url}: Status ${networkResponse.status}`);
-                     } else {
-                          console.warn(`Not caching - fetch returned no response for ${event.request.url}`);
-                     }
-                     return networkResponse;
-                 }
-
-                // Clone the response. A response is a stream.
-                const responseToCache = networkResponse.clone();
-
-                // Cache the new response for future use
-                 caches.open(CACHE_NAME)
-                 .then(cache => {
-                    // Only cache GET requests or specifically allowed opaque responses
-                    if(event.request.method === 'GET') {
-                         cache.put(event.request, responseToCache).catch(putError => {
-                             console.error(`Failed to cache ${event.request.url}:`, putError);
-                         });
+                    if (!isValidResponse && !isOpaqueFont) {
+                        // Don't cache invalid or non-essential opaque responses
+                        if(networkResponse) {
+                            console.warn(`Not caching invalid response for ${event.request.url}: Status ${networkResponse.status}`);
+                        } else {
+                             console.warn(`Not caching - fetch returned no response for ${event.request.url}`);
+                        }
+                        return networkResponse; // Return the problematic response anyway
                     }
-                 });
 
-                return networkResponse;
-            }
+                    // Clone the response because it needs to be used by the cache and the browser.
+                    const responseToCache = networkResponse.clone();
+
+                    // Cache the new valid response for future use
+                    caches.open(CACHE_NAME)
+                    .then(cache => {
+                        // Only cache GET requests or specifically allowed opaque responses
+                        if(event.request.method === 'GET') {
+                            cache.put(event.request, responseToCache).catch(putError => {
+                                console.error(`Failed to cache ${event.request.url}:`, putError);
+                            });
+                        }
+                    });
+
+                    // Return the original network response to the browser
+                    return networkResponse;
+                }
             ).catch(error => {
-                console.error('Network fetch failed:', error, event.request.url);
-                // Optional: Return a fallback offline page/resource if fetch fails entirely
-                // Example: Check if the request accepts HTML and return an offline page
-                // if (event.request.headers.get('accept').includes('text/html')) {
-                //     return caches.match('/offline.html'); // Make sure offline.html is cached
-                // }
-                // For now, just let the browser handle the network error
-                 // throw error; // Re-throwing might break the app offline
+                console.error('Network fetch failed for non-navigation asset:', error, event.request.url);
+                // Optional: Provide fallback for assets if needed (e.g., placeholder image)
+                // For now, just let the browser handle the network error for assets
+                throw error; // Re-throw to indicate failure
             });
         })
     );
