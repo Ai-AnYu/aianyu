@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <!-- MODIFIED: Added maximum-scale=1.0, user-scalable=no to prevent zooming -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#007aff"> <!-- Ensure theme-color matches manifest -->
+    <!-- MODIFIED: Changed theme-color to #f9f9f9 -->
+    <meta name="theme-color" content="#f9f9f9"> <!-- Ensure theme-color matches manifest -->
     <title>AI 暗语</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
@@ -32,7 +33,8 @@
             <div class="textbox-controls">
                 <div class="input-type-indicator">
                      <!-- NEW: Token Plan Icon Link (Tooltip already present) -->
-                     <a href="tokenplan.html" target="_self" style="display: inline-flex; align-items: center;"> <!-- Use inline-flex for better alignment within flex parent -->
+                     <!-- MODIFIED: Updated href to point to pages directory -->
+                     <a href="pages/tokenplan.html" target="_self" style="display: inline-flex; align-items: center;"> <!-- Use inline-flex for better alignment within flex parent -->
                          <img src="icons/token.svg" alt="Token Plan" data-tooltip="查看 $AIAY Token 计划" class="control-icon token-icon"> <!-- Added token-icon class -->
                      </a>
                      <!-- The single icon displayed, updated by JS (Tooltip managed by JS) -->
