@@ -525,7 +525,7 @@ function determineModeAndUpdateIcon(input) { /* ... unchanged ... */
             else { /* Too long */ showToast("中文文本长度不能超过 10 个汉字", '😅'); }
         } else if (/^[\x20-\x7E]+$/.test(trimmedInput)) { // Pure ASCII (printable)
              if (trimmedInput.length <= 30) { determinedMode = "embed"; determinedSubtype = "ascii"; iconDataType = 'ascii'; } // Use 'ascii' type
-             else { /* Too long */ showToast("英文/符号文本长度不能超过 30 个字符", '😅'); }
+             else { /* Too long */ showToast("英文或符号文本长度不能超过 30 个字符", '😅'); }
         } else { /* Mixed/unsupported chars */ showToast("输入格式无法识别或包含不支持的字符", '😅'); }
     }
     // If input is empty, determinedMode remains null, iconDataType remains 'text'
@@ -594,9 +594,9 @@ userInput.addEventListener('keydown', (event) => { /* ... unchanged ... */
         } else {
             // Provide context-specific feedback
             if (userInput.disabled) {
-                showToast("请等待当前操作完成", "⏳");
+                showToast("请等待当前操作完成...", "⏳");
             } else {
-                showToast("请先输入有效的内容", "🤔");
+                showToast("请先输入有效的内容？", "🤔");
             }
         }
     }
@@ -656,7 +656,7 @@ modelOptionsContainer.addEventListener('click', (event) => { /* ... unchanged ..
             // Update the main model icon's tooltip based on the selected option's tooltip
             currentModelIcon.dataset.tooltip = `模型: ${optionTooltip}`;
             currentModelIcon.dataset.model = newModel;
-            showToast(`已选择模型: ${newModel}`, '🤖');
+            showToast(`已选择模型: ${newModel}`, '🧠');
             // Reset private model details if switching away from private
             selectedProvider = null;
             selectedPrivateModel = null;
@@ -685,11 +685,11 @@ copyButton.addEventListener('click', () => { /* ... unchanged ... */
     }
     navigator.clipboard.writeText(textToCopy)
         .then(() => {
-            showToast("内容已复制！", '📋');
+            showToast("内容已复制", '📋');
         })
         .catch(err => {
             console.error('Failed to copy: ', err);
-            showToast("复制失败！", '😥');
+            showToast("复制失败", '😥');
         });
 });
 
@@ -737,7 +737,7 @@ window.saveApiKeySettings = function() { /* ... unchanged ... */
         currentModelIcon.dataset.tooltip = `模型: 私人 (${provider} - ${model})`;
         currentModelIcon.dataset.model = 'private';
     }
-    showToast("API 密钥设置已保存 (仅本地)", '💾'); // Clarify storage
+    showToast("API 密钥设置已保存（仅本地）", '💾'); // Clarify storage
     closeApiKeyModal();
 }
 
@@ -924,7 +924,7 @@ async function handleEmbed() {
                     final_output_text = replace_punctuations(cleaned_text, expected_punctuation);
                     // Update the displayed text one last time with corrected punctuation
                     displayOutput(final_output_text);
-                    showToast("暗语植入成功!", '🎉');
+                    showToast("暗语植入成功！", '🎉');
                     operation_status = 'success'; // Mark as success
                 }
             } catch(completionError) {
@@ -1009,7 +1009,7 @@ async function handleEmbed() {
 function handleDecode() {
     const input = userInput.value.trim();
     if (!currentMode || currentMode !== 'decode') {
-        showToast("输入内容无法识别为可提取类型", '😅');
+        showToast("输入内容无法识别为可提取暗语", '😅');
         return;
     }
     // Use the non-streaming loading indicator for decode
@@ -1072,7 +1072,7 @@ function handleDecode() {
             } else {
                  // Success case (includes empty string for abc/chinese if valid)
                  displayOutput(decoded);
-                 showToast("暗语提取成功!", '🎉');
+                 showToast("暗语提取成功", '🎉');
                  operation_status = 'success';
             }
 
@@ -1106,7 +1106,7 @@ document.getElementById('topicInput').addEventListener('input', function() { /* 
         this.value = this.value.substring(0, 10);
 
         // 显示提示消息
-        showToast('话题最多只能输入10个字符', '⚠️');
+        showToast('话题最多只能输入 10 个字符', '⚠️');
     }
 });
 
