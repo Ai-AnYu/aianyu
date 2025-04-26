@@ -1,7 +1,7 @@
 {
     "name": "AI 暗语",
-    "short_name": "AI暗语",
-    "description": "aianyu.xyz",
+    "short_name": "aianyu.xyz",
+    "description": "AI 暗语是一种基于人工智能技术生成的独特语言。它依赖于一套预定义的词汇表，以及将字符映射到这些词汇的特定规则，由 AI 负责具体的生成过程。",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#f9f9f9",
