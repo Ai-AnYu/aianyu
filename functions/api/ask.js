@@ -5,7 +5,7 @@
 const PUBLIC_MODEL_CONFIG = {
     "Grok-3": {
         provider: "XAI",
-        base_url: "https://pure-dodo-84.deno.dev/v1",
+        base_url: "https://api-proxy.me/xai/v1",
         model_param: "grok-3",
         apiKeyEnvVar: "XAI_API_KEY" // Cloudflare ENV variable name
     },
@@ -30,7 +30,7 @@ const PRIVATE_PROVIDER_CONFIG = {
     "硅基流动": { base_url: "https://api.siliconflow.cn/v1", models: { "Deepseek-v3.0": "deepseek-ai/DeepSeek-V3", "Deepseek-vR1": "deepseek-ai/DeepSeek-R1" } },
     "阿里百练": { base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1", models: { "Deepseek-v3.0": "deepseek-v3", "Deepseek-vR1": "deepseek-r1" } },
     "NVIDIA": { base_url: "https://integrate.api.nvidia.com/v1", models: { "Deepseek-vR1": "deepseek-ai/deepseek-r1" } },
-    "Grok x.com": { base_url: "https://pure-dodo-84.deno.dev/v1", models: { "Grok-3-mini": "grok-3-mini-latest", "Grok-3": "grok-3-latest" } }
+    "Grok x.com": { base_url: "https://api-proxy.me/xai/v1", models: { "Grok-3-mini": "grok-3-mini-latest", "Grok-3": "grok-3-latest" } }
 };
 
 // Helper function to create error responses
