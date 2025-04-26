@@ -18,7 +18,8 @@
     --border-radius: 12px;
     --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-    --icon-size: 20px; /* Smaller icon size variable */
+    /* MODIFIED: Increased default icon size */
+    --icon-size: 24px; /* Larger icon size variable */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -64,7 +65,8 @@ body {
     align-items: center; /* Vertically center items (logo and title group) */
     justify-content: center; /* Horizontally center items */
     gap: 15px;
-    margin-bottom: 25px;
+    /* MODIFIED: Reduced bottom margin to move textbox closer */
+    margin-bottom: 15px;
     padding-bottom: 15px;
     /* border-bottom: 1px solid var(--border-color); Removed border */
 }
@@ -311,6 +313,7 @@ code {
     padding: 12px; /* Increased padding */
     padding-bottom: 45px; /* Space for controls */
     box-shadow: var(--card-shadow);
+    /* MODIFIED: Keep margin-bottom for spacing below the textbox */
     margin-bottom: 25px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -325,7 +328,8 @@ code {
     border: none;
     background-color: transparent;
     color: var(--text-color);
-    font-size: 1.05em; /* Increased font size */
+    /* MODIFIED: Increased font size */
+    font-size: 1.5em; /* Slightly larger font size */
     line-height: 1.5; /* Adjust line height */
     box-sizing: border-box;
     resize: none; /* Disable textarea resize */
@@ -363,12 +367,14 @@ code {
 }
 
 .control-icon {
-    width: var(--icon-size); /* Use variable */
+    /* MODIFIED: Use updated variable */
+    width: var(--icon-size);
     height: var(--icon-size);
     cursor: pointer;
     opacity: 0.7; /* Default opacity */
     transition: opacity 0.2s ease, background-color 0.2s ease;
-    padding: 4px; /* Padding around icon */
+    /* MODIFIED: Adjusted padding slightly for larger icons */
+    padding: 5px;
     border-radius: 6px; /* Slightly rounder */
     position: relative; /* Needed for tooltip positioning */
     background-color: var(--control-icon-bg);
@@ -547,7 +553,8 @@ code {
     .action-settings-icons { order: 2; }
     /* Adjust gaps if needed */
     .input-type-indicator, .action-settings-icons { gap: 4px; }
-    :root { --icon-size: 18px; } /* Smaller icons on mobile */
+    /* MODIFIED: Increased icon size for mobile */
+    :root { --icon-size: 22px; } /* Larger icons on mobile */
      /* Make topic input smaller */
      .topic-option input { width: 100px; }
      /* Ensure options don't overflow */
