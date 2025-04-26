@@ -5,7 +5,7 @@ const urlsToCache = [
   '/style.css',
   '/script.js',
   '/manifest.json',
-  '/tokenplan.html', // Add the new HTML page
+  '/pages/tokenplan.html', // Add the new HTML page
   '/img/aianyu1024x1024.png', // Cache the logo (assuming path is correct)
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
