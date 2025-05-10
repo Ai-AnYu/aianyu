@@ -1,5 +1,3 @@
-/* START OF MODIFIED FILE style.css */
-
 /* --- Base & Variables --- */
 :root {
     --bg-color: #f9f9f9;
@@ -20,6 +18,8 @@
     --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
     /* MODIFIED: Increased default icon size */
     --icon-size: 24px; /* Larger icon size variable */
+    --guide-icon-size: 28px; /* Icon size for guide headers */
+    --feature-icon-size: 22px; /* Icon size for feature items */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -291,13 +291,140 @@ code {
 
 
 /* --- Guide & Misc --- */
-.guide-section { margin-top: 30px; } /* Add margin since divider removed */
+.guide-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.guide-main-title {
+    font-size: 1.6em; /* Larger main title */
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 30px; /* More space below main title */
+    color: var(--text-color);
+}
+
+.guide-subsection {
+    margin-bottom: 30px; /* Space between subsections */
+    padding: 15px;
+    border-radius: var(--border-radius);
+    background-color: var(--input-bg-color); /* Subtle background for subsections */
+    border: 1px solid var(--border-color);
+}
+.guide-subsection.notice {
+    background-color: rgba(var(--warning-color-rgb, 255, 149, 0), 0.08); /* Use RGBA for opacity */
+    border-color: rgba(var(--warning-color-rgb, 255, 149, 0), 0.3);
+}
+/* Define CSS variables for RGB components of warning color for cleaner RGBA usage */
+:root {
+    --warning-color-rgb: 255, 149, 0; /* For --warning-color: #ff9500; */
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+      /* Update if your dark mode warning color is different and needs RGB components */
+      /* --warning-color-rgb: ...; */
+    }
+    .guide-subsection.notice {
+        background-color: rgba(var(--warning-color-rgb, 255, 149, 0), 0.15); /* Slightly more opaque in dark mode */
+        border-color: rgba(var(--warning-color-rgb, 255, 149, 0), 0.4);
+    }
+}
+
+
+.guide-subsection-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.guide-header-icon {
+    width: var(--guide-icon-size);
+    height: var(--guide-icon-size);
+    opacity: 0.8;
+}
+
+.guide-subsection h4 {
+    font-size: 1.2em;
+    font-weight: 500;
+    margin: 0;
+    color: var(--text-color);
+}
+
+.guide-subsection p {
+    color: var(--secondary-text-color);
+    margin-bottom: 10px;
+    font-size: 0.95em;
+    line-height: 1.7; /* Increased line height for readability */
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid */
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.feature-item {
+    display: flex;
+    align-items: flex-start; /* Align items to the top */
+    gap: 12px;
+    padding: 12px;
+    background-color: var(--card-bg-color); /* Slightly different background for items */
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+.feature-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+}
+
+.feature-icon {
+    width: var(--feature-icon-size);
+    height: var(--feature-icon-size);
+    margin-top: 3px; /* Align icon better with text */
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.feature-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.feature-text strong {
+    font-weight: 500;
+    font-size: 1em;
+    color: var(--text-color);
+    margin-bottom: 3px;
+}
+
+.feature-text span {
+    font-size: 0.9em;
+    color: var(--secondary-text-color);
+    line-height: 1.5;
+}
+
+.tag {
+    display: inline-block;
+    padding: 2px 6px;
+    background-color: var(--input-bg-color);
+    color: var(--accent-color); /* Make tags stand out a bit more */
+    border-radius: 5px;
+    margin: 0 2px;
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    font-size: 0.85em;
+    border: 1px solid var(--border-color);
+}
+/* Style for the old guide section elements if any were missed in HTML conversion */
 .guide-section h5 { font-size: 1.3em; margin-bottom: 10px; font-weight: 600; }
 .guide-section h6 { font-size: 1.1em; margin-top: 15px; margin-bottom: 5px; font-weight: 500; color: var(--secondary-text-color); }
-.guide-section p, .guide-section ul { color: var(--secondary-text-color); margin-bottom: 10px; font-size: 0.95em; }
-.guide-section ul { padding-left: 20px; }
+.guide-section ul { padding-left: 20px; color: var(--secondary-text-color); margin-bottom: 10px; font-size: 0.95em;}
 .guide-section li { margin-bottom: 5px; }
-.tag { display: inline-block; padding: 2px 6px; background-color: var(--input-bg-color); color: var(--secondary-text-color); border-radius: 5px; margin: 0 2px; font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace; font-size: 0.85em; border: 1px solid var(--border-color); }
+
+
 .hidden { display: none !important; }
 
 /* --- Toast Notification --- */
@@ -564,5 +691,15 @@ code {
     /* MODIFIED: Removed specific copy button styles for mobile as they are now default */
     /* .copy-button { padding: 3px; } */
     /* .copy-button .material-symbols-outlined { font-size: 16px; } */
+
+    .guide-main-title { font-size: 1.4em; margin-bottom: 20px; }
+    .guide-subsection { padding: 12px; }
+    .guide-subsection h4 { font-size: 1.1em; }
+    .features-grid { grid-template-columns: 1fr; /* Stack items on mobile */ }
+    .feature-item { padding: 10px; }
+    :root {
+        --guide-icon-size: 24px;
+        --feature-icon-size: 20px;
+    }
+
 }
-/* END OF MODIFIED FILE style.css */
